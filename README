@@ -6,4 +6,20 @@ http://blog.afandian.com
 
 Use of this source code is governed by the MIT license which can be found in the LICENSE file.
 
-This is currently a work in progress. A library to parse Standard Midi Files.
+This is a library to parse SMF MIDI files. It's my first Go project and I'm working through http://www.music.mcgill.ca/~ich/classes/mumt306/midiformat.pdf without making reference to any other code to try to make it as idiomatic to Go as possible. 
+
+The aim is to have full unit tests for every function and exceptional flow, to produce a robust and precise library.
+
+The library is split into layers:
+
+MidiLexer takes an io.Reader and an object that conforms to MidiLexerCallback. MidiLexer is an event-based lexer, which calls methods on the callback object.
+
+MidiParser is an object that conforms to MidiLexerCallback. It takes a callback of type MidiParserCallback, and provides an extra layer of interpretation.
+
+To use this library, either write a callback that conforms to MidiLexerCallback to get the raw stream (not recommended) or a callback that conforms to MidiParserCallback (recommended).
+
+io.Reader --> MidiLexer <-- MidiLexerCallback <-- MidiParserCallback
+
+There is a full test suite, including mock objects for the io.Reader.
+
+THIS IS A WORK IN PROGRESS, currently working on writing and testing MidiLexer.
