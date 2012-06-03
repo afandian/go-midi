@@ -55,7 +55,7 @@ func parseVarLength(reader io.Reader) (uint32, error) {
 
 	// RTFM.
 	var first = true
-	for (first || (buffer[0] & 0x80 == 0x80)) && (num > 0) {
+	for (first || (buffer[0]&0x80 == 0x80)) && (num > 0) {
 		result = result << 7
 
 		num, _ = reader.Read(buffer)
@@ -63,7 +63,7 @@ func parseVarLength(reader io.Reader) (uint32, error) {
 		first = false
 	}
 
-	if num == 0 && ! first {
+	if num == 0 && !first {
 		return result, UnexpectedEndOfFile
 	}
 
