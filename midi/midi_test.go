@@ -39,6 +39,14 @@ func assertBytesEqual(a []byte, b []byte, t *testing.T) {
 	}
 }
 
+// Assert uint16s equal
+func assertUint16Equal(a int, b int, test *testing.T) {
+	if a != b {
+		log.Fatal(a, " != ", b)
+		test.FailNow()
+	}
+}
+
 /* Tests for tests */
 
 // The MockReader should behaves as a Reader should.
@@ -248,7 +256,7 @@ func TestParse32Bit(t *testing.T) {
 		}
 	}
 
-	// Now we want to read past the end of a var length file.
+	// Now we want to read past the end of a file.
 	// We should get an UnexpectedEndOfFile error.
 
 	// First read OK.
@@ -260,6 +268,60 @@ func TestParse32Bit(t *testing.T) {
 
 	// Second read not OK.
 	_, err = parseUint32(reader)
+	if err != UnexpectedEndOfFile {
+		log.Fatal("Expected End of file ")
+	}
+}
+
+// Test for parseUint16
+func TestParse16Bit(t *testing.T) {
+	expected := []uint16{
+		0,
+		1,
+		4,
+		42,
+		429,
+		4294,
+		42949,
+	}
+
+	input := [][]byte{
+		[]byte{0x00, 0x00},
+		[]byte{0x00, 0x01},
+		[]byte{0x00, 0x04},
+		[]byte{0x00, 0x2A},
+		[]byte{0x01, 0xAD},
+		[]byte{0x10, 0xC6},
+		[]byte{0xA7, 0xC5},
+	}
+
+	var numItems = len(input)
+
+	for i := 0; i < numItems; i++ {
+		var reader = NewMockReader(&input[i])
+		var result, err = parseUint16(reader)
+
+		if result != expected[i] {
+			log.Fatal("Expected ", expected[i], " got ", result)
+		}
+
+		if err != nil {
+			log.Fatal("Expected no error got ", err)
+		}
+	}
+
+	// Now we want to read past the end of a file.
+	// We should get an UnexpectedEndOfFile error.
+
+	// First read OK.
+	var reader = NewMockReader(&input[0])
+	var _, err = parseUint16(reader)
+	if err != nil {
+		log.Fatal("Expected no error got ", err)
+	}
+
+	// Second read not OK.
+	_, err = parseUint16(reader)
 	if err != UnexpectedEndOfFile {
 		log.Fatal("Expected End of file ")
 	}
@@ -278,7 +340,7 @@ func TestParseChunkHeader(t *testing.T) {
 	// To short in the length word.
 	var tooShort2 = []byte{0x4D, 0x54, 0x72, 0x6b, 0x00, 0x41, 0x89}
 
-	var header *ChunkHeader
+	var header ChunkHeader
 	var err error
 	var reader io.Reader
 
@@ -330,5 +392,87 @@ func TestParseChunkHeader(t *testing.T) {
 
 	if err == nil {
 		log.Fatal("Expected error for tooshort 2")
+	}
+}
+
+// Test for parseChunkHeader.
+func TestParseHeaderData(t *testing.T) {
+	var err error
+	var data, expected HeaderData
+
+	// Format: 1
+	// Tracks: 2
+	// Division: metrical 5
+	var headerMetrical = NewMockReader(&[]byte{0x00, 0x01, 0x00, 0x02, 0x00, 0x05})
+	expected = HeaderData{
+		format:              1,
+		numTracks:           2,
+		timeFormat:          MetricalTimeFormat,
+		timeFormatData:      0x00,
+		ticksPerQuarterNote: 5}
+
+	data, err = parseHeaderData(headerMetrical)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if data != expected {
+		log.Fatal(data, " != ", expected)
+	}
+
+	// Format: 2
+	// Tracks: 1
+	// Division: timecode (actual data ignored for now)
+	var headerTimecode = NewMockReader(&[]byte{0x00, 0x02, 0x00, 0x01, 0xFF, 0x05})
+	expected = HeaderData{
+		format:              2,
+		numTracks:           1,
+		timeFormat:          TimeCodeTimeFormat,
+		timeFormatData:      0x7F05, // Removed the top timecode type bit flag.
+		ticksPerQuarterNote: 0}
+
+	data, err = parseHeaderData(headerTimecode)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if data != expected {
+		log.Fatal(data, " != ", expected)
+	}
+
+	// Format: 3, which doesn't exist.
+	var badFormat = NewMockReader(&[]byte{0x00, 0x03, 0x00, 0x01, 0xFF, 0x05})
+	data, err = parseHeaderData(badFormat)
+
+	if err != UnsupportedSmfFormat {
+		log.Println("Expected exception but got none")
+		t.FailNow()
+	}
+
+	// Too short in each field
+	var tooShort1 = NewMockReader(&[]byte{0x00, 0x02, 0x00, 0x01, 0xFF})
+	data, err = parseHeaderData(tooShort1)
+
+	if err != UnexpectedEndOfFile {
+		log.Println("Expected exception but got ", err)
+		t.FailNow()
+	}
+
+	var tooShort2 = NewMockReader(&[]byte{0x00, 0x02, 0x00})
+	data, err = parseHeaderData(tooShort2)
+
+	if err != UnexpectedEndOfFile {
+		log.Println("Expected exception but got none")
+		t.FailNow()
+	}
+
+	var tooShort3 = NewMockReader(&[]byte{0x00})
+	data, err = parseHeaderData(tooShort3)
+
+	if err != UnexpectedEndOfFile {
+		log.Println("Expected exception but got none")
+		t.FailNow()
 	}
 }

@@ -15,30 +15,6 @@ import (
 	"io"
 )
 
-// Error codes for Lexer
-const (
-	Ok         = 0x01
-	NoCallback = 0x01 << 1
-	NoReader   = 0x01 << 2
-)
-
-// Error types and objects.
-type VarLengthNotFoundError struct{}
-
-type UnexpectedEndOfFileError struct{}
-
-func (e UnexpectedEndOfFileError) Error() string {
-	return "Unexpected End of File"
-}
-
-var UnexpectedEndOfFile = UnexpectedEndOfFileError{}
-
-// MIDI data types
-type ChunkHeader struct {
-	chunkType string
-	length    uint32
-}
-
 // MidiLexer is a Standard Midi File Lexer.
 // Pass this a Reader to a MIDI file and a callback that conforms to MidiLexerCallback 
 // and it'll run over the file, calling events on the callback.

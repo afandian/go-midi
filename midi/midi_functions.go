@@ -40,6 +40,29 @@ func parseUint32(reader io.Reader) (uint32, error) {
 	return value, nil
 }
 
+// parseUint16 parse a 2-byte 16 bit integer from a Reader.
+func parseUint16(reader io.Reader) (uint16, error) {
+
+	var buffer []byte = make([]byte, 2)
+	num, err := reader.Read(buffer)
+
+	// If we couldn't read 2 bytes, that's a problem.
+	if num != 2 {
+		return 0, UnexpectedEndOfFile
+	}
+
+	// If there was some other problem, that's also a problem.
+	if err != nil {
+		return 0, err
+	}
+
+	var value uint16 = 0x00
+	value |= uint16(buffer[1]) << 0
+	value |= uint16(buffer[0]) << 8
+
+	return value, nil
+}
+
 // parseVarLength parse a variable length value from a Reader.
 func parseVarLength(reader io.Reader) (uint32, error) {
 
@@ -71,7 +94,7 @@ func parseVarLength(reader io.Reader) (uint32, error) {
 }
 
 // parseChunkHeader parses a chunk header from a Reader.
-func parseChunkHeader(reader io.Reader) (*ChunkHeader, error) {
+func parseChunkHeader(reader io.Reader) (ChunkHeader, error) {
 	var chunk ChunkHeader
 
 	var chunkTypeBuffer []byte = make([]byte, 4)
@@ -79,11 +102,11 @@ func parseChunkHeader(reader io.Reader) (*ChunkHeader, error) {
 
 	// If we couldn't read 4 bytes, that's a problem.
 	if num != 4 {
-		return &chunk, UnexpectedEndOfFile
+		return chunk, UnexpectedEndOfFile
 	}
 
 	if err != nil {
-		return &chunk, err
+		return chunk, err
 	}
 
 	chunk.length, err = parseUint32(reader)
@@ -91,8 +114,55 @@ func parseChunkHeader(reader io.Reader) (*ChunkHeader, error) {
 
 	// parseUint32 might return an error.
 	if err != nil {
-		return &chunk, err
+		return chunk, err
 	}
 
-	return &chunk, nil
+	return chunk, nil
+}
+
+// parseHeaderData parses header data
+func parseHeaderData(reader io.Reader) (HeaderData, error) {
+	var headerData HeaderData
+	// var buffer []byte = make([]byte, 2)
+	var err error
+
+	// Format
+	headerData.format, err = parseUint16(reader)
+
+	if err != nil {
+		return headerData, err
+	}
+
+	// Should be one of 0, 1, 2
+	if headerData.format > 2 {
+		return headerData, UnsupportedSmfFormat
+	}
+
+	// Num tracks
+	headerData.numTracks, err = parseUint16(reader)
+
+	if err != nil {
+		return headerData, err
+	}
+	// Division
+	var division uint16
+	division, err = parseUint16(reader)
+
+	// "If bit 15 of <division> is zero, the bits 14 thru 0 represent the number
+	// of delta time "ticks" which make up a quarter-note." 
+	if division&0x8000 == 0x0000 {
+		headerData.ticksPerQuarterNote = division & 0x7FFF
+		headerData.timeFormat = MetricalTimeFormat
+	} else {
+		// TODO: Can't be bothered to implement this bit just now. 
+		// If you want it, write it!
+		headerData.timeFormatData = division & 0x7FFF
+		headerData.timeFormat = TimeCodeTimeFormat
+	}
+
+	if err != nil {
+		return headerData, err
+	}
+
+	return headerData, nil
 }
