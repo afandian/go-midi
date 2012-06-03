@@ -5,3 +5,5 @@ joe@afandian.com
 http://blog.afandian.com
 
 Use of this source code is governed by the MIT license which can be found in the LICENSE file.
+
+This is currently a work in progress. A library to parse Standard Midi Files.
