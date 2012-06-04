@@ -13,28 +13,25 @@ package midi
 
 import (
 	"io"
-	"log"
 	"testing"
 )
 
 // Helper assertions
 func assertHasFlag(value int, flag int, test *testing.T) {
 	if value&flag == 0 {
-		test.FailNow()
+		test.Fatal("Expected to find ", flag, " in ", value)
 	}
 }
 
 // assertBytesEqual asserts that the given byte arrays or slices are equal.
 func assertBytesEqual(a []byte, b []byte, t *testing.T) {
 	if len(a) != len(b) {
-		log.Fatal("Two arrays not equal", a, b)
-		t.FailNow()
+		t.Fatal("Two arrays not equal", a, b)
 	}
 
 	for i := 0; i < len(a); i++ {
 		if a[i] != b[i] {
-			log.Fatal("Two arrays not equal. At ", i, " was ", a[i], " vs ", b[i])
-			t.FailNow()
+			t.Fatal("Two arrays not equal. At ", i, " was ", a[i], " vs ", b[i])
 		}
 	}
 }
@@ -42,8 +39,7 @@ func assertBytesEqual(a []byte, b []byte, t *testing.T) {
 // Assert uint16s equal
 func assertUint16Equal(a int, b int, test *testing.T) {
 	if a != b {
-		log.Fatal(a, " != ", b)
-		test.FailNow()
+		test.Fatal(a, " != ", b)
 	}
 }
 
@@ -61,13 +57,11 @@ func TestMockReaderWorks(t *testing.T) {
 	// Now read into the 3-length buffer
 	count, err := reader.Read(data)
 	if count != 3 {
-		log.Fatal("Count not 3 was ", count)
-		t.FailNow()
+		t.Fatal("Count not 3 was ", count)
 	}
 
 	if err != nil {
-		log.Fatal("Error not nil, was ", err)
-		t.FailNow()
+		t.Fatal("Error not nil, was ", err)
 	}
 
 	assertBytesEqual(data, []byte{0x01, 0x02, 0x03}, t)
@@ -75,26 +69,22 @@ func TestMockReaderWorks(t *testing.T) {
 	// Read into it again to get the next 3
 	count, err = reader.Read(data)
 	if count != 3 {
-		log.Fatal("Count not 3 was ", count)
-		t.FailNow()
+		t.Fatal("Count not 3 was ", count)
 	}
 
 	if err != nil {
-		log.Fatal("Error not nil, was ", err)
-		t.FailNow()
+		t.Fatal("Error not nil, was ", err)
 	}
 	assertBytesEqual(data, []byte{0x04, 0x05, 0x06}, t)
 
 	// Read again to get the last one.
 	count, err = reader.Read(data)
 	if count != 1 {
-		log.Fatal("Count not 1 was ", count)
-		t.FailNow()
+		t.Fatal("Count not 1 was ", count)
 	}
 
 	if err != nil {
-		log.Fatal("Error not nil, was ", err)
-		t.FailNow()
+		t.Fatal("Error not nil, was ", err)
 	}
 
 	// Data will still have the old data remaining
@@ -103,13 +93,11 @@ func TestMockReaderWorks(t *testing.T) {
 	// One more time, should be empty
 	count, err = reader.Read(data)
 	if count != 0 {
-		log.Fatal("Count not 0 was ", count)
-		t.FailNow()
+		t.Fatal("Count not 0 was ", count)
 	}
 
 	if err != nil {
-		log.Fatal("Error not nil, was ", err)
-		t.FailNow()
+		t.Fatal("Error not nil, was ", err)
 	}
 }
 
@@ -127,8 +115,7 @@ func TestLexerShouldComplainNullArgs(t *testing.T) {
 	lexer = NewMidiLexer(mockReader, mockLexerCallback)
 	status = lexer.Lex()
 	if status != Ok {
-		log.Fatal("Status should be OK")
-		t.FailNow()
+		t.Fatal("Status should be OK")
 	}
 
 	// Call with no reader
@@ -180,13 +167,11 @@ func TestVarLengthParser(t *testing.T) {
 		var result, err = parseVarLength(reader)
 
 		if result != expected[i] {
-			log.Fatal("Expected ", expected[i], " got ", result)
-			t.FailNow()
+			t.Fatal("Expected ", expected[i], " got ", result)
 		}
 
 		if err != nil {
-			log.Fatal("Expected no error got ", err)
-			t.FailNow()
+			t.Fatal("Expected no error got ", err)
 		}
 	}
 
@@ -197,15 +182,13 @@ func TestVarLengthParser(t *testing.T) {
 	var reader = NewMockReader(&input[0])
 	var _, err = parseVarLength(reader)
 	if err != nil {
-		log.Fatal("Expected no error got ", err)
-		t.FailNow()
+		t.Fatal("Expected no error got ", err)
 	}
 
 	// Second read not OK.
 	_, err = parseVarLength(reader)
 	if err != UnexpectedEndOfFile {
-		log.Fatal("Expected End of file ")
-		t.FailNow()
+		t.Fatal("Expected End of file ")
 	}
 }
 
@@ -248,11 +231,11 @@ func TestParse32Bit(t *testing.T) {
 		var result, err = parseUint32(reader)
 
 		if result != expected[i] {
-			log.Fatal("Expected ", expected[i], " got ", result)
+			t.Fatal("Expected ", expected[i], " got ", result)
 		}
 
 		if err != nil {
-			log.Fatal("Expected no error got ", err)
+			t.Fatal("Expected no error got ", err)
 		}
 	}
 
@@ -263,13 +246,13 @@ func TestParse32Bit(t *testing.T) {
 	var reader = NewMockReader(&input[0])
 	var _, err = parseUint32(reader)
 	if err != nil {
-		log.Fatal("Expected no error got ", err)
+		t.Fatal("Expected no error got ", err)
 	}
 
 	// Second read not OK.
 	_, err = parseUint32(reader)
 	if err != UnexpectedEndOfFile {
-		log.Fatal("Expected End of file ")
+		t.Fatal("Expected End of file ")
 	}
 }
 
@@ -302,11 +285,11 @@ func TestParse16Bit(t *testing.T) {
 		var result, err = parseUint16(reader)
 
 		if result != expected[i] {
-			log.Fatal("Expected ", expected[i], " got ", result)
+			t.Fatal("Expected ", expected[i], " got ", result)
 		}
 
 		if err != nil {
-			log.Fatal("Expected no error got ", err)
+			t.Fatal("Expected no error got ", err)
 		}
 	}
 
@@ -317,13 +300,13 @@ func TestParse16Bit(t *testing.T) {
 	var reader = NewMockReader(&input[0])
 	var _, err = parseUint16(reader)
 	if err != nil {
-		log.Fatal("Expected no error got ", err)
+		t.Fatal("Expected no error got ", err)
 	}
 
 	// Second read not OK.
 	_, err = parseUint16(reader)
 	if err != UnexpectedEndOfFile {
-		log.Fatal("Expected End of file ")
+		t.Fatal("Expected End of file ")
 	}
 }
 
@@ -349,15 +332,15 @@ func TestParseChunkHeader(t *testing.T) {
 	header, err = parseChunkHeader(reader)
 
 	if header.chunkType != "MThd" {
-		log.Fatal("Got ", header, " expected MThd")
+		t.Fatal("Got ", header, " expected MThd")
 	}
 
 	if header.length != 4294967 {
-		log.Fatal("Got ", header, " expected 4294967")
+		t.Fatal("Got ", header, " expected 4294967")
 	}
 
 	if err != nil {
-		log.Fatal("Got error ", err)
+		t.Fatal("Got error ", err)
 	}
 
 	// Try for typical track header
@@ -365,15 +348,15 @@ func TestParseChunkHeader(t *testing.T) {
 	header, err = parseChunkHeader(reader)
 
 	if header.chunkType != "MTrk" {
-		log.Fatal("Got ", header, " expected MTrk")
+		t.Fatal("Got ", header, " expected MTrk")
 	}
 
 	if header.length != 4294967 {
-		log.Fatal("Got ", header, " expected 4294967")
+		t.Fatal("Got ", header, " expected 4294967")
 	}
 
 	if err != nil {
-		log.Fatal("Got error ", err)
+		t.Fatal("Got error ", err)
 	}
 
 	// Now two incomplete headers.
@@ -383,7 +366,7 @@ func TestParseChunkHeader(t *testing.T) {
 	header, err = parseChunkHeader(reader)
 
 	if err == nil {
-		log.Fatal("Expected error for tooshort1")
+		t.Fatal("Expected error for tooshort1")
 	}
 
 	// Too short to parse the length
@@ -391,7 +374,7 @@ func TestParseChunkHeader(t *testing.T) {
 	header, err = parseChunkHeader(reader)
 
 	if err == nil {
-		log.Fatal("Expected error for tooshort 2")
+		t.Fatal("Expected error for tooshort 2")
 	}
 }
 
@@ -414,11 +397,11 @@ func TestParseHeaderData(t *testing.T) {
 	data, err = parseHeaderData(headerMetrical)
 
 	if err != nil {
-		log.Fatal(err)
+		t.Fatal(err)
 	}
 
 	if data != expected {
-		log.Fatal(data, " != ", expected)
+		t.Fatal(data, " != ", expected)
 	}
 
 	// Format: 2
@@ -435,11 +418,11 @@ func TestParseHeaderData(t *testing.T) {
 	data, err = parseHeaderData(headerTimecode)
 
 	if err != nil {
-		log.Fatal(err)
+		t.Fatal(err)
 	}
 
 	if data != expected {
-		log.Fatal(data, " != ", expected)
+		t.Fatal(data, " != ", expected)
 	}
 
 	// Format: 3, which doesn't exist.
@@ -447,8 +430,7 @@ func TestParseHeaderData(t *testing.T) {
 	data, err = parseHeaderData(badFormat)
 
 	if err != UnsupportedSmfFormat {
-		log.Println("Expected exception but got none")
-		t.FailNow()
+		t.Fatal("Expected exception but got none")
 	}
 
 	// Too short in each field
@@ -456,23 +438,20 @@ func TestParseHeaderData(t *testing.T) {
 	data, err = parseHeaderData(tooShort1)
 
 	if err != UnexpectedEndOfFile {
-		log.Println("Expected exception but got ", err)
-		t.FailNow()
+		t.Fatal("Expected exception but got ", err)
 	}
 
 	var tooShort2 = NewMockReader(&[]byte{0x00, 0x02, 0x00})
 	data, err = parseHeaderData(tooShort2)
 
 	if err != UnexpectedEndOfFile {
-		log.Println("Expected exception but got none")
-		t.FailNow()
+		t.Fatal("Expected exception but got none")
 	}
 
 	var tooShort3 = NewMockReader(&[]byte{0x00})
 	data, err = parseHeaderData(tooShort3)
 
 	if err != UnexpectedEndOfFile {
-		log.Println("Expected exception but got none")
-		t.FailNow()
+		t.Fatal("Expected exception but got none")
 	}
 }
