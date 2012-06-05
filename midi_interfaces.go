@@ -27,7 +27,13 @@ type MidiLexerCallback interface {
 	// There was an error opening the file input.
 	ErrorOpeningFile()
 
-	// Midi messages
+	// SMF header.
+	Header(header HeaderData)
+
+	// A chunk header (usually MTrk).
+	Track(header ChunkHeader)
+
+	// Midi in-track messages
 	NoteOff(channel uint8, pitch uint8, velocity uint8)
 	NoteOn(channel uint8, pitch uint8, velocity uint8)
 	PolyphonicAfterTouch(channel uint8, pitch uint8, pressure uint8)

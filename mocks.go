@@ -11,9 +11,15 @@
 
 package midi
 
+import (
+	"io"
+)
+
 // A mock implementation of MockLexerCallback that does nothing
 type MockLexerCallback struct{}
 
+func (*MockLexerCallback) Header(header HeaderData) {}
+func (*MockLexerCallback) Track(header ChunkHeader) {}
 func (*MockLexerCallback) Began()                                                          {}
 func (*MockLexerCallback) Finished()                                                       {}
 func (*MockLexerCallback) ErrorReading()                                                   {}
@@ -41,21 +47,21 @@ func (*MockLexerCallback) ActiveSensing()                                       
 func (*MockLexerCallback) Reset()                                                          {}
 func (*MockLexerCallback) Done()                                                           {}
 
-// MockReader is a mock Reader. Constructed with data, behaves as a file reader.
-type MockReader struct {
+// MockReadSeeker is a mock Reader and Seeker. Constructed with data, behaves as a file reader.
+type MockReadSeeker struct {
 	data     *[]byte
-	position int
+	position int64
 }
 
-// NewMockReader creates a new MockReader object backed by the given byte array data.
-func NewMockReader(data *[]byte) *MockReader {
-	return &MockReader{data: data}
+// NewMockReadSeeker creates a new MockReadSeeker object backed by the given byte array data.
+func NewMockReadSeeker(data *[]byte) *MockReadSeeker {
+	return &MockReadSeeker{data: data}
 }
 
 // Read fills the given buffer, returning the number of bytes and an error.
-func (reader *MockReader) Read(p []byte) (n int, err error) {
-	var amount = len(p)
-	var maxAmount = len(*reader.data) - reader.position
+func (reader *MockReadSeeker) Read(p []byte) (n int, err error) {
+	var amount = int64(len(p))
+	var maxAmount = int64(len(*reader.data)) - reader.position
 
 	// Don't read past the end
 	if amount > maxAmount {
@@ -64,5 +70,41 @@ func (reader *MockReader) Read(p []byte) (n int, err error) {
 
 	copy(p, (*reader.data)[reader.position:reader.position+amount])
 	reader.position += amount
-	return amount, nil
+	return int(amount), nil
 }
+
+// Seek sets the offset for the next Read or Write to offset, interpreted according to whence: 0 means relative to the origin of the file, 1 means relative to the current offset, and 2 means relative to the end. Seek returns the new offset and an Error, if any.
+func (reader *MockReadSeeker) Seek(offset int64, whence int) (ret int64, err error) {
+	switch whence {
+		case 0: {
+			if offset > int64(len(*reader.data)) {
+				return -1, io.EOF
+			}
+
+			reader.position = offset
+
+			return reader.position, nil
+		}
+		case 1: {
+			if offset + reader.position > int64(len(*reader.data)) {
+				return -1, io.EOF
+			}
+
+			reader.position += offset
+
+			return reader.position, nil
+		}
+		case 2: {
+			if offset > int64(len(*reader.data)) {
+				return -1, io.EOF
+			}
+
+			reader.position = int64(len(*reader.data)) - offset
+
+			return reader.position, nil
+		}
+	}
+
+	return
+}
+

@@ -15,8 +15,9 @@ import (
 	"io"
 )
 
-// parseUint32 parse a 4-byte 32 bit integer from a Reader.
-func parseUint32(reader io.Reader) (uint32, error) {
+// parseUint32 parse a 4-byte 32 bit integer from a ReadSeeker.
+// It returns the 32-bit value and an error.
+func parseUint32(reader io.ReadSeeker) (uint32, error) {
 
 	var buffer []byte = make([]byte, 4)
 	num, err := reader.Read(buffer)
@@ -40,8 +41,9 @@ func parseUint32(reader io.Reader) (uint32, error) {
 	return value, nil
 }
 
-// parseUint16 parse a 2-byte 16 bit integer from a Reader.
-func parseUint16(reader io.Reader) (uint16, error) {
+// parseUint16 parses a 2-byte 16 bit integer from a ReadSeeker.
+// It returns the 16-bit value and an error.
+func parseUint16(reader io.ReadSeeker) (uint16, error) {
 
 	var buffer []byte = make([]byte, 2)
 	num, err := reader.Read(buffer)
@@ -63,8 +65,9 @@ func parseUint16(reader io.Reader) (uint16, error) {
 	return value, nil
 }
 
-// parseVarLength parse a variable length value from a Reader.
-func parseVarLength(reader io.Reader) (uint32, error) {
+// parseVarLength parses a variable length value from a ReadSeeker.
+// It returns the [up to] 32-bit value and an error.
+func parseVarLength(reader io.ReadSeeker) (uint32, error) {
 
 	// Single byte buffer to read byte by byte.
 	var buffer []byte = make([]uint8, 1)
@@ -93,8 +96,9 @@ func parseVarLength(reader io.Reader) (uint32, error) {
 	return result, nil
 }
 
-// parseChunkHeader parses a chunk header from a Reader.
-func parseChunkHeader(reader io.Reader) (ChunkHeader, error) {
+// parseChunkHeader parses a chunk header from a ReadSeeker.
+// It returns the ChunkHeader struct as a value and an error.
+func parseChunkHeader(reader io.ReadSeeker) (ChunkHeader, error) {
 	var chunk ChunkHeader
 
 	var chunkTypeBuffer []byte = make([]byte, 4)
@@ -120,8 +124,9 @@ func parseChunkHeader(reader io.Reader) (ChunkHeader, error) {
 	return chunk, nil
 }
 
-// parseHeaderData parses header data
-func parseHeaderData(reader io.Reader) (HeaderData, error) {
+// parseHeaderData parses SMF-header chunk header data.
+// It returns the ChunkHeader struct as a value and an error.
+func parseHeaderData(reader io.ReadSeeker) (HeaderData, error) {
 	var headerData HeaderData
 	// var buffer []byte = make([]byte, 2)
 	var err error
@@ -166,3 +171,4 @@ func parseHeaderData(reader io.Reader) (HeaderData, error) {
 
 	return headerData, nil
 }
+

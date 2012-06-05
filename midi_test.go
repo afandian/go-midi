@@ -45,11 +45,17 @@ func assertUint16Equal(a int, b int, test *testing.T) {
 
 /* Tests for tests */
 
-// The MockReader should behaves as a Reader should.
-func TestMockReaderWorks(t *testing.T) {
-	var reader = NewMockReader(&[]byte{0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07})
+// The MockReadSeeker should behaves as a ReadSeeker should.
+func TestMockReadSeekerWorks(t *testing.T) {
+	var reader = NewMockReadSeeker(&[]byte{0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07})
+	var dataSize int64 = 7
+
+	// Buffer to read into.
 	var data []byte = []byte{0x00, 0x00, 0x00}
 	var count = 0
+
+	// Single byte buffer.
+	var byteBuffer []byte = []byte{0x00}
 
 	// Start with empty data buffer
 	assertBytesEqual(data, []byte{0x00, 0x00, 0x00}, t)
@@ -99,6 +105,186 @@ func TestMockReaderWorks(t *testing.T) {
 	if err != nil {
 		t.Fatal("Error not nil, was ", err)
 	}
+
+	/*
+	 *  Test seeking.
+	 */
+
+	/*
+	 * 0 - Relative to start of file 
+	 */
+
+	// Seek from the start of the file to the last byte.
+	sook, err := reader.Seek(dataSize-1, 0)
+
+	if err != nil { 
+		t.Fatal(err)
+	}
+
+	if sook != dataSize-1 {
+		t.Fatal("Expected to return ", dataSize-1, " got ", sook)
+	}
+
+	count, err = reader.Read(byteBuffer)
+
+	if err != nil { 
+		t.Fatal(err)
+	}
+
+	if byteBuffer[0] != 0x07 {
+		t.Fatal("Expected 0x07 got ", byteBuffer)
+	}
+
+	// Seek from the start of the file to the 3rd byte.
+	sook, err = reader.Seek(2, 0)
+
+	if err != nil { 
+		t.Fatal(err)
+	}
+
+	if sook != 2 {
+		t.Fatal("Expected to return ", 2, " got ", sook)
+	}
+
+	count, err = reader.Read(byteBuffer)
+
+	if err != nil { 
+		t.Fatal(err)
+	}
+
+	if byteBuffer[0] != 0x03 {
+		t.Fatal("Expected 0x03 got ", byteBuffer)
+	}
+
+	// Seek from the start of the file to the first byte.
+	sook, err = reader.Seek(0, 0)
+
+	if err != nil { 
+		t.Fatal(err)
+	}
+
+	if sook != 0 {
+		t.Fatal("Expected to return ", 0, " got ", sook)
+	}
+
+	count, err = reader.Read(byteBuffer)
+
+	if err != nil { 
+		t.Fatal(err)
+	}
+
+	if byteBuffer[0] != 0x01 {
+		t.Fatal("Expected 0x01 got ", byteBuffer)
+	}
+
+	/*
+	 * 1 - Relative to current position
+	 */
+
+	// Seek from the current position to the same place.
+	
+	// Get in the middle
+	sook, err = reader.Seek(4, 0)
+
+	if err != nil { 
+		t.Fatal(err)
+	}
+
+	if sook != 4 {
+		t.Fatal("Expected to return ", 4, " got ", sook)
+	}
+
+	// Seek same place relative to current.
+	sook, err = reader.Seek(0, 1)
+
+	if err != nil { 
+		t.Fatal(err)
+	}
+
+	if sook != 4 {
+		t.Fatal("Expected to return ", 4, " got ", sook)
+	}
+
+	count, err = reader.Read(byteBuffer)
+
+	if err != nil { 
+		t.Fatal(err)
+	}
+
+	if byteBuffer[0] != 0x05 {
+		t.Fatal("Expected 0x05 got ", byteBuffer)
+	}
+
+	// Seek forward a byte
+	sook, err = reader.Seek(1, 1)
+
+	if err != nil { 
+		t.Fatal(err)
+	}
+
+	if sook != 6 {
+		t.Fatal("Expected to return ", 6, " got ", sook)
+	}
+
+	count, err = reader.Read(byteBuffer)
+
+	if err != nil { 
+		t.Fatal(err)
+	}
+
+	if byteBuffer[0] != 0x07 {
+		t.Fatal("Expected 0x07 got ", byteBuffer)
+	}
+
+
+	/*
+	 * 2 - Relative to end of file
+	 */
+
+	// Seek from the current position to the same place.
+	
+	// Get to the end.
+	// Seek same place relative to end
+	sook, err = reader.Seek(0, 2)
+
+	if err != nil { 
+		t.Fatal(err)
+	}
+
+	if sook != 7 {
+		t.Fatal("Expected to return ", 7, " got ", sook)
+	}
+
+	count, err = reader.Read(byteBuffer)
+
+	if err != nil { 
+		t.Fatal(err)
+	}
+
+	if byteBuffer[0] != 0x07 {
+		t.Fatal("Expected 0x07 got ", byteBuffer)
+	}
+
+	// Seek back a byte
+	sook, err = reader.Seek(1, 2)
+
+	if err != nil { 
+		t.Fatal(err)
+	}
+
+	if sook != 6 {
+		t.Fatal("Expected to return ", 6, " got ", sook)
+	}
+
+	count, err = reader.Read(byteBuffer)
+
+	if err != nil { 
+		t.Fatal(err)
+	}
+
+	if byteBuffer[0] != 0x07 {
+		t.Fatal("Expected 0x07 got ", byteBuffer)
+	}
 }
 
 /* MidiLexer Tests */
@@ -108,11 +294,11 @@ func TestLexerShouldComplainNullArgs(t *testing.T) {
 	var lexer *MidiLexer
 
 	var mockLexerCallback = new(MockLexerCallback)
-	var mockReader = NewMockReader(&[]byte{})
+	var mockReadSeeker = NewMockReadSeeker(&[]byte{})
 	var status int
 
 	// First call with good arguments.
-	lexer = NewMidiLexer(mockReader, mockLexerCallback)
+	lexer = NewMidiLexer(mockReadSeeker, mockLexerCallback)
 	status = lexer.Lex()
 	if status != Ok {
 		t.Fatal("Status should be OK")
@@ -121,10 +307,10 @@ func TestLexerShouldComplainNullArgs(t *testing.T) {
 	// Call with no reader
 	lexer = NewMidiLexer(nil, mockLexerCallback)
 	status = lexer.Lex()
-	assertHasFlag(status, NoReader, t)
+	assertHasFlag(status, NoReadSeeker, t)
 
 	// Call with no callback
-	lexer = NewMidiLexer(mockReader, nil)
+	lexer = NewMidiLexer(mockReadSeeker, nil)
 	status = lexer.Lex()
 	assertHasFlag(status, NoCallback, t)
 }
@@ -163,7 +349,7 @@ func TestVarLengthParser(t *testing.T) {
 	var numItems = len(input)
 
 	for i := 0; i < numItems; i++ {
-		var reader = NewMockReader(&input[i])
+		var reader = NewMockReadSeeker(&input[i])
 		var result, err = parseVarLength(reader)
 
 		if result != expected[i] {
@@ -179,7 +365,7 @@ func TestVarLengthParser(t *testing.T) {
 	// We should get an UnexpectedEndOfFile error.
 
 	// First read OK.
-	var reader = NewMockReader(&input[0])
+	var reader = NewMockReadSeeker(&input[0])
 	var _, err = parseVarLength(reader)
 	if err != nil {
 		t.Fatal("Expected no error got ", err)
@@ -227,7 +413,7 @@ func TestParse32Bit(t *testing.T) {
 	var numItems = len(input)
 
 	for i := 0; i < numItems; i++ {
-		var reader = NewMockReader(&input[i])
+		var reader = NewMockReadSeeker(&input[i])
 		var result, err = parseUint32(reader)
 
 		if result != expected[i] {
@@ -243,7 +429,7 @@ func TestParse32Bit(t *testing.T) {
 	// We should get an UnexpectedEndOfFile error.
 
 	// First read OK.
-	var reader = NewMockReader(&input[0])
+	var reader = NewMockReadSeeker(&input[0])
 	var _, err = parseUint32(reader)
 	if err != nil {
 		t.Fatal("Expected no error got ", err)
@@ -281,7 +467,7 @@ func TestParse16Bit(t *testing.T) {
 	var numItems = len(input)
 
 	for i := 0; i < numItems; i++ {
-		var reader = NewMockReader(&input[i])
+		var reader = NewMockReadSeeker(&input[i])
 		var result, err = parseUint16(reader)
 
 		if result != expected[i] {
@@ -297,7 +483,7 @@ func TestParse16Bit(t *testing.T) {
 	// We should get an UnexpectedEndOfFile error.
 
 	// First read OK.
-	var reader = NewMockReader(&input[0])
+	var reader = NewMockReadSeeker(&input[0])
 	var _, err = parseUint16(reader)
 	if err != nil {
 		t.Fatal("Expected no error got ", err)
@@ -325,10 +511,10 @@ func TestParseChunkHeader(t *testing.T) {
 
 	var header ChunkHeader
 	var err error
-	var reader io.Reader
+	var reader io.ReadSeeker
 
 	// Try for typical MIDI file header
-	reader = NewMockReader(&MThd)
+	reader = NewMockReadSeeker(&MThd)
 	header, err = parseChunkHeader(reader)
 
 	if header.chunkType != "MThd" {
@@ -344,7 +530,7 @@ func TestParseChunkHeader(t *testing.T) {
 	}
 
 	// Try for typical track header
-	reader = NewMockReader(&MTrk)
+	reader = NewMockReadSeeker(&MTrk)
 	header, err = parseChunkHeader(reader)
 
 	if header.chunkType != "MTrk" {
@@ -362,7 +548,7 @@ func TestParseChunkHeader(t *testing.T) {
 	// Now two incomplete headers.
 
 	// Too short to parse the type
-	reader = NewMockReader(&tooShort1)
+	reader = NewMockReadSeeker(&tooShort1)
 	header, err = parseChunkHeader(reader)
 
 	if err == nil {
@@ -370,7 +556,7 @@ func TestParseChunkHeader(t *testing.T) {
 	}
 
 	// Too short to parse the length
-	reader = NewMockReader(&tooShort2)
+	reader = NewMockReadSeeker(&tooShort2)
 	header, err = parseChunkHeader(reader)
 
 	if err == nil {
@@ -386,7 +572,7 @@ func TestParseHeaderData(t *testing.T) {
 	// Format: 1
 	// Tracks: 2
 	// Division: metrical 5
-	var headerMetrical = NewMockReader(&[]byte{0x00, 0x01, 0x00, 0x02, 0x00, 0x05})
+	var headerMetrical = NewMockReadSeeker(&[]byte{0x00, 0x01, 0x00, 0x02, 0x00, 0x05})
 	expected = HeaderData{
 		format:              1,
 		numTracks:           2,
@@ -407,7 +593,7 @@ func TestParseHeaderData(t *testing.T) {
 	// Format: 2
 	// Tracks: 1
 	// Division: timecode (actual data ignored for now)
-	var headerTimecode = NewMockReader(&[]byte{0x00, 0x02, 0x00, 0x01, 0xFF, 0x05})
+	var headerTimecode = NewMockReadSeeker(&[]byte{0x00, 0x02, 0x00, 0x01, 0xFF, 0x05})
 	expected = HeaderData{
 		format:              2,
 		numTracks:           1,
@@ -426,7 +612,7 @@ func TestParseHeaderData(t *testing.T) {
 	}
 
 	// Format: 3, which doesn't exist.
-	var badFormat = NewMockReader(&[]byte{0x00, 0x03, 0x00, 0x01, 0xFF, 0x05})
+	var badFormat = NewMockReadSeeker(&[]byte{0x00, 0x03, 0x00, 0x01, 0xFF, 0x05})
 	data, err = parseHeaderData(badFormat)
 
 	if err != UnsupportedSmfFormat {
@@ -434,21 +620,21 @@ func TestParseHeaderData(t *testing.T) {
 	}
 
 	// Too short in each field
-	var tooShort1 = NewMockReader(&[]byte{0x00, 0x02, 0x00, 0x01, 0xFF})
+	var tooShort1 = NewMockReadSeeker(&[]byte{0x00, 0x02, 0x00, 0x01, 0xFF})
 	data, err = parseHeaderData(tooShort1)
 
 	if err != UnexpectedEndOfFile {
 		t.Fatal("Expected exception but got ", err)
 	}
 
-	var tooShort2 = NewMockReader(&[]byte{0x00, 0x02, 0x00})
+	var tooShort2 = NewMockReadSeeker(&[]byte{0x00, 0x02, 0x00})
 	data, err = parseHeaderData(tooShort2)
 
 	if err != UnexpectedEndOfFile {
 		t.Fatal("Expected exception but got none")
 	}
 
-	var tooShort3 = NewMockReader(&[]byte{0x00})
+	var tooShort3 = NewMockReadSeeker(&[]byte{0x00})
 	data, err = parseHeaderData(tooShort3)
 
 	if err != UnexpectedEndOfFile {

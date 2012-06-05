@@ -15,7 +15,7 @@ package midi
 const (
 	Ok         = 0x01
 	NoCallback = 0x01 << 1
-	NoReader   = 0x01 << 2
+	NoReadSeeker   = 0x01 << 2
 )
 
 // A load of Errors and single values for convenience.
