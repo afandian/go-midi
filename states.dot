@@ -1,0 +1,14 @@
+// States of the Lexer. Render this with graphviz if you want.
+digraph lexer_state {
+	rankdir=LR;
+	size="8,5"
+	node [shape = doublecircle];
+	ExpectHeader;
+
+	node [shape = circle];
+	ExpectChunk;
+
+	ExpectHeader -> ExpectChunk [label="Began(), Header()"];
+	ExpectChunk -> ExpectChunk [label="Skip unrecognised chunk type"];
+	ExpectChunk -> ExpectTrackEvent [label="Track()"]
+}

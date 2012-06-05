@@ -13,9 +13,9 @@ package midi
 
 // Error codes for Lexer
 const (
-	Ok         = 0x01
-	NoCallback = 0x01 << 1
-	NoReadSeeker   = 0x01 << 2
+	Ok           = 0x01
+	NoCallback   = 0x01 << 1
+	NoReadSeeker = 0x01 << 2
 )
 
 // A load of Errors and single values for convenience.
@@ -41,3 +41,11 @@ func (e UnsupportedSmfFormatError) Error() string {
 }
 
 var UnsupportedSmfFormat = UnsupportedSmfFormatError{}
+
+type ExpectedMthdError struct{}
+
+func (e ExpectedMthdError) Error() string {
+	return "Expected SMF Midi header."
+}
+
+var ExpectedMthd = ExpectedMthdError{}

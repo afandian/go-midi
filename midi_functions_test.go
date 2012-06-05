@@ -200,8 +200,11 @@ func TestParse16Bit(t *testing.T) {
 // Test for parseChunkHeader.
 func TestParseChunkHeader(t *testing.T) {
 	// Headers for two popular chunk types.
-	// Both with length 4294967 (parseUint32 is tested separately).
-	var MThd = []byte{0x4D, 0x54, 0x68, 0x64, 0x00, 0x41, 0x89, 0x37}
+
+	// Length 6, as all MThds shoudl be 6 long.
+	var MThd = []byte{0x4D, 0x54, 0x68, 0x64, 0x00, 0x00, 0x00, 0x06}
+
+	// Arbitrary length 4294967 (parseUint32 is tested separately).
 	var MTrk = []byte{0x4D, 0x54, 0x72, 0x6b, 0x00, 0x41, 0x89, 0x37}
 
 	// Too short in the type word.
@@ -222,8 +225,8 @@ func TestParseChunkHeader(t *testing.T) {
 		t.Fatal("Got ", header, " expected MThd")
 	}
 
-	if header.length != 4294967 {
-		t.Fatal("Got ", header, " expected 4294967")
+	if header.length != 6 {
+		t.Fatal("Got ", header, " expected 6")
 	}
 
 	if err != nil {
@@ -265,7 +268,7 @@ func TestParseChunkHeader(t *testing.T) {
 	}
 }
 
-// Test for parseChunkHeader.
+// Test for parseHeaderData.
 func TestParseHeaderData(t *testing.T) {
 	var err error
 	var data, expected HeaderData

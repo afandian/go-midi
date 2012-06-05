@@ -41,3 +41,34 @@ func assertUint16Equal(a int, b int, test *testing.T) {
 		test.Fatal(a, " != ", b)
 	}
 }
+
+// Assert uint16s equal
+func assertIntsEqual(a int, b int, test *testing.T) {
+	if a != b {
+		test.Fatal(a, " != ", b)
+	}
+}
+
+func assertFalse(a bool, test *testing.T) {
+	if a == true {
+		test.Fatal("Should have been false")
+	}
+}
+
+func assertTrue(a bool, test *testing.T) {
+	if a != true {
+		test.Fatal("Should have been true")
+	}
+}
+
+func assertNoError(e error, test *testing.T) {
+	if e != nil {
+		test.Fatal("Should have been no error, was ", e)
+	}
+}
+
+func assertError(e error, expected error, test *testing.T) {
+	if e != expected {
+		test.Fatal("Should have been ", expected, " was ", e)
+	}
+}

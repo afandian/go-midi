@@ -18,7 +18,6 @@ import (
 // parseUint32 parse a 4-byte 32 bit integer from a ReadSeeker.
 // It returns the 32-bit value and an error.
 func parseUint32(reader io.ReadSeeker) (uint32, error) {
-
 	var buffer []byte = make([]byte, 4)
 	num, err := reader.Read(buffer)
 
@@ -171,4 +170,3 @@ func parseHeaderData(reader io.ReadSeeker) (HeaderData, error) {
 
 	return headerData, nil
 }
-

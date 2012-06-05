@@ -85,7 +85,6 @@ func TestMockReadSeekerSeeks(t *testing.T) {
 	// Single byte buffer.
 	var byteBuffer []byte = []byte{0x00}
 
-
 	/*
 	 * 0 - Relative to start of file 
 	 */
@@ -93,7 +92,7 @@ func TestMockReadSeekerSeeks(t *testing.T) {
 	// Seek from the start of the file to the last byte.
 	sook, err := reader.Seek(dataSize-1, 0)
 
-	if err != nil { 
+	if err != nil {
 		t.Fatal(err)
 	}
 
@@ -101,10 +100,9 @@ func TestMockReadSeekerSeeks(t *testing.T) {
 		t.Fatal("Expected to return ", dataSize-1, " got ", sook)
 	}
 
-
 	count, err = reader.Read(byteBuffer)
 
-	if err != nil { 
+	if err != nil {
 		t.Fatal(err)
 	}
 
@@ -119,7 +117,7 @@ func TestMockReadSeekerSeeks(t *testing.T) {
 	// Seek from the start of the file to the 3rd byte.
 	sook, err = reader.Seek(2, 0)
 
-	if err != nil { 
+	if err != nil {
 		t.Fatal(err)
 	}
 
@@ -129,7 +127,7 @@ func TestMockReadSeekerSeeks(t *testing.T) {
 
 	count, err = reader.Read(byteBuffer)
 
-	if err != nil { 
+	if err != nil {
 		t.Fatal(err)
 	}
 
@@ -140,7 +138,7 @@ func TestMockReadSeekerSeeks(t *testing.T) {
 	// Seek from the start of the file to the first byte.
 	sook, err = reader.Seek(0, 0)
 
-	if err != nil { 
+	if err != nil {
 		t.Fatal(err)
 	}
 
@@ -150,7 +148,7 @@ func TestMockReadSeekerSeeks(t *testing.T) {
 
 	count, err = reader.Read(byteBuffer)
 
-	if err != nil { 
+	if err != nil {
 		t.Fatal(err)
 	}
 
@@ -163,11 +161,11 @@ func TestMockReadSeekerSeeks(t *testing.T) {
 	 */
 
 	// Seek from the current position to the same place.
-	
+
 	// Get in the middle
 	sook, err = reader.Seek(4, 0)
 
-	if err != nil { 
+	if err != nil {
 		t.Fatal(err)
 	}
 
@@ -178,7 +176,7 @@ func TestMockReadSeekerSeeks(t *testing.T) {
 	// Seek same place relative to current.
 	sook, err = reader.Seek(0, 1)
 
-	if err != nil { 
+	if err != nil {
 		t.Fatal(err)
 	}
 
@@ -188,7 +186,7 @@ func TestMockReadSeekerSeeks(t *testing.T) {
 
 	count, err = reader.Read(byteBuffer)
 
-	if err != nil { 
+	if err != nil {
 		t.Fatal(err)
 	}
 
@@ -199,7 +197,7 @@ func TestMockReadSeekerSeeks(t *testing.T) {
 	// Seek forward a byte
 	sook, err = reader.Seek(1, 1)
 
-	if err != nil { 
+	if err != nil {
 		t.Fatal(err)
 	}
 
@@ -209,7 +207,7 @@ func TestMockReadSeekerSeeks(t *testing.T) {
 
 	count, err = reader.Read(byteBuffer)
 
-	if err != nil { 
+	if err != nil {
 		t.Fatal(err)
 	}
 
@@ -217,18 +215,17 @@ func TestMockReadSeekerSeeks(t *testing.T) {
 		t.Fatal("Expected 0x07 got ", byteBuffer)
 	}
 
-
 	/*
 	 * 2 - Relative to end of file
 	 */
 
 	// Seek from the current position to the same place.
-	
+
 	// Get to the end.
 	// Seek same place relative to end
 	sook, err = reader.Seek(0, 2)
 
-	if err != nil { 
+	if err != nil {
 		t.Fatal(err)
 	}
 
@@ -238,7 +235,7 @@ func TestMockReadSeekerSeeks(t *testing.T) {
 
 	count, err = reader.Read(byteBuffer)
 
-	if err != nil { 
+	if err != nil {
 		t.Fatal(err)
 	}
 
@@ -249,7 +246,7 @@ func TestMockReadSeekerSeeks(t *testing.T) {
 	// Seek back a byte
 	sook, err = reader.Seek(1, 2)
 
-	if err != nil { 
+	if err != nil {
 		t.Fatal(err)
 	}
 
@@ -259,7 +256,7 @@ func TestMockReadSeekerSeeks(t *testing.T) {
 
 	count, err = reader.Read(byteBuffer)
 
-	if err != nil { 
+	if err != nil {
 		t.Fatal(err)
 	}
 

@@ -21,10 +21,9 @@ const (
 	// Expect SMF Header chunk.
 	ExpectHeader = iota
 
-	// Expect a chunk. Any kind of chunk. 
+	// Expect a chunk. Any kind of chunk. Except MThd.
 	// But really, anything other than MTrk would be weird.
 	ExpectChunk = iota
-
 
 	// We're in a Track, expect a track event.
 	ExpectTrackEvent = iota
@@ -64,6 +63,7 @@ func (lexer *MidiLexer) Lex() (error int) {
 }
 
 // next lexes the next item, calling appropriate callbacks.
+// Finished only set true when finished correctly.
 func (lexer *MidiLexer) next() (finished bool, err error) {
 	err = nil
 	finished = false
@@ -76,10 +76,17 @@ func (lexer *MidiLexer) next() (finished bool, err error) {
 		return
 	}
 
-
 	// See comments for state values above.
 	switch lexer.state {
-		case ExpectHeader: {
+	case ExpectHeader:
+		{
+			var chunkHeader ChunkHeader
+			chunkHeader, err = parseChunkHeader(lexer.input)
+			if chunkHeader.chunkType != "MThd" {
+				err = ExpectedMthd
+				return
+			}
+
 			var header, err = parseHeaderData(lexer.input)
 
 			if err != nil {
@@ -92,7 +99,8 @@ func (lexer *MidiLexer) next() (finished bool, err error) {
 			lexer.state = ExpectChunk
 		}
 
-		case ExpectChunk: {
+	case ExpectChunk:
+		{
 			var chunkHeader, err = parseChunkHeader(lexer.input)
 
 			if err != nil {
@@ -103,7 +111,7 @@ func (lexer *MidiLexer) next() (finished bool, err error) {
 			lexer.nextChunkHeader = int64(chunkHeader.length) + currentPosition
 
 			// If the header is of an unknown type, skip over it.
-			if chunkHeader.chunkType != "MThd" {
+			if chunkHeader.chunkType != "MTrk" {
 				lexer.input.Seek(lexer.nextChunkHeader, 1)
 
 				// Then we expect another chunk.
