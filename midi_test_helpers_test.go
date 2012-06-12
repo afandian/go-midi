@@ -36,7 +36,21 @@ func assertBytesEqual(a []byte, b []byte, t *testing.T) {
 }
 
 // Assert uint16s equal
-func assertUint16Equal(a int, b int, test *testing.T) {
+func assertUint16Equal(a uint16, b uint16, test *testing.T) {
+	if a != b {
+		test.Fatal(a, " != ", b)
+	}
+}
+
+// Assert uint16s equal
+func assertInt16sEqual(a int16, b int16, test *testing.T) {
+	if a != b {
+		test.Fatal(a, " != ", b)
+	}
+}
+
+// Assert uint32s equal
+func assertUint32Equal(a uint32, b uint32, test *testing.T) {
 	if a != b {
 		test.Fatal(a, " != ", b)
 	}
@@ -44,6 +58,13 @@ func assertUint16Equal(a int, b int, test *testing.T) {
 
 // Assert uint16s equal
 func assertIntsEqual(a int, b int, test *testing.T) {
+	if a != b {
+		test.Fatal(a, " != ", b)
+	}
+}
+
+// Assert uint8s equal
+func assertUint8sEqual(a uint8, b uint8, test *testing.T) {
 	if a != b {
 		test.Fatal(a, " != ", b)
 	}

@@ -49,3 +49,11 @@ func (e ExpectedMthdError) Error() string {
 }
 
 var ExpectedMthd = ExpectedMthdError{}
+
+type BadSizeChunkError struct{}
+
+func (e BadSizeChunkError) Error() string {
+	return "Chunk was an unexpected size."
+}
+
+var BadSizeChunk = BadSizeChunkError{}

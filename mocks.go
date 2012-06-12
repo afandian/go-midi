@@ -24,28 +24,29 @@ func (*MockLexerCallback) Began()                                               
 func (*MockLexerCallback) Finished()                                                       {}
 func (*MockLexerCallback) ErrorReading()                                                   {}
 func (*MockLexerCallback) ErrorOpeningFile()                                               {}
-func (*MockLexerCallback) NoteOff(channel uint8, pitch uint8, velocity uint8)              {}
-func (*MockLexerCallback) NoteOn(channel uint8, pitch uint8, velocity uint8)               {}
-func (*MockLexerCallback) PolyphonicAfterTouch(channel uint8, pitch uint8, pressure uint8) {}
-func (*MockLexerCallback) ControlChange(channel uint8, controller uint8, value uint8)      {}
-func (*MockLexerCallback) ProgramChange(channel uint8, program uint8)                      {}
-func (*MockLexerCallback) ChannelAfterTouch(channel uint8, value uint8)                    {}
-func (*MockLexerCallback) PitchWheel(channel uint8, value uint16)                          {}
-func (*MockLexerCallback) TimeCodeQuarter(messageType uint8, values uint8)                 {}
-func (*MockLexerCallback) SongPositionPointer(beats uint16)                                {}
-func (*MockLexerCallback) SongSelect(song uint8)                                           {}
-func (*MockLexerCallback) Undefined1()                                                     {}
-func (*MockLexerCallback) Undefined2()                                                     {}
-func (*MockLexerCallback) TuneRequest()                                                    {}
-func (*MockLexerCallback) TimingClock()                                                    {}
-func (*MockLexerCallback) Undefined3()                                                     {}
-func (*MockLexerCallback) Start()                                                          {}
-func (*MockLexerCallback) Continue()                                                       {}
-func (*MockLexerCallback) Stop()                                                           {}
-func (*MockLexerCallback) Undefined4()                                                     {}
-func (*MockLexerCallback) ActiveSensing()                                                  {}
-func (*MockLexerCallback) Reset()                                                          {}
-func (*MockLexerCallback) Done()                                                           {}
+func (*MockLexerCallback) NoteOff(channel uint8, pitch uint8, velocity uint8, time uint32) {}
+func (*MockLexerCallback) NoteOn(channel uint8, pitch uint8, velocity uint8, time uint32)  {}
+func (*MockLexerCallback) PolyphonicAfterTouch(channel uint8, pitch uint8, pressure uint8, time uint32) {
+}
+func (*MockLexerCallback) ControlChange(channel uint8, controller uint8, value uint8, time uint32) {}
+func (*MockLexerCallback) ProgramChange(channel uint8, program uint8, time uint32)                 {}
+func (*MockLexerCallback) ChannelAfterTouch(channel uint8, value uint8, time uint32)               {}
+func (*MockLexerCallback) PitchWheel(channel uint8, value int16, absValue uint16, time uint32)     {}
+func (*MockLexerCallback) TimeCodeQuarter(messageType uint8, values uint8, time uint32)            {}
+func (*MockLexerCallback) SongPositionPointer(beats uint16, time uint32)                           {}
+func (*MockLexerCallback) SongSelect(song uint8, time uint32)                                      {}
+func (*MockLexerCallback) Undefined1(time uint32)                                                  {}
+func (*MockLexerCallback) Undefined2(time uint32)                                                  {}
+func (*MockLexerCallback) TuneRequest(time uint32)                                                 {}
+func (*MockLexerCallback) TimingClock(time uint32)                                                 {}
+func (*MockLexerCallback) Undefined3(time uint32)                                                  {}
+func (*MockLexerCallback) Start(time uint32)                                                       {}
+func (*MockLexerCallback) Continue(time uint32)                                                    {}
+func (*MockLexerCallback) Stop(time uint32)                                                        {}
+func (*MockLexerCallback) Undefined4(time uint32)                                                  {}
+func (*MockLexerCallback) ActiveSensing(time uint32)                                               {}
+func (*MockLexerCallback) Reset(time uint32)                                                       {}
+func (*MockLexerCallback) Done(time uint32)                                                        {}
 
 // A mock implementation of LexerCallback that counts each method call
 type CountingLexerCallback struct {
@@ -83,44 +84,81 @@ type CountingLexerCallback struct {
 	// Most recent values
 	headerData  HeaderData
 	chunkHeader ChunkHeader
+	pitch       uint8
+	channel     uint8
+	time        uint32
+	velocity    uint8
+	pressure    uint8
+
+	pitchWheelValue         int16
+	pitchWheelValueAbsolute uint16
 }
 
-func (cbk *CountingLexerCallback) Header(header HeaderData)                           { cbk.header++; cbk.headerData = header }
-func (cbk *CountingLexerCallback) Track(header ChunkHeader)                           { cbk.track++; cbk.chunkHeader = header }
-func (cbk *CountingLexerCallback) Began()                                             { cbk.began++ }
-func (cbk *CountingLexerCallback) Finished()                                          { cbk.finished++ }
-func (cbk *CountingLexerCallback) ErrorReading()                                      { cbk.errorReading++ }
-func (cbk *CountingLexerCallback) ErrorOpeningFile()                                  { cbk.errorOpeningFile++ }
-func (cbk *CountingLexerCallback) NoteOff(channel uint8, pitch uint8, velocity uint8) { cbk.noteOff++ }
-func (cbk *CountingLexerCallback) NoteOn(channel uint8, pitch uint8, velocity uint8)  { cbk.noteOn++ }
-func (cbk *CountingLexerCallback) PolyphonicAfterTouch(channel uint8, pitch uint8, pressure uint8) {
-	cbk.polyphonicAfterTouch++
+func (cbk *CountingLexerCallback) Header(header HeaderData) { cbk.header++; cbk.headerData = header }
+func (cbk *CountingLexerCallback) Track(header ChunkHeader) { cbk.track++; cbk.chunkHeader = header }
+func (cbk *CountingLexerCallback) Began()                   { cbk.began++ }
+func (cbk *CountingLexerCallback) Finished()                { cbk.finished++ }
+func (cbk *CountingLexerCallback) ErrorReading()            { cbk.errorReading++ }
+func (cbk *CountingLexerCallback) ErrorOpeningFile()        { cbk.errorOpeningFile++ }
+func (cbk *CountingLexerCallback) NoteOff(channel uint8, pitch uint8, velocity uint8, time uint32) {
+	cbk.noteOff++
+	cbk.pitch = pitch
+	cbk.channel = channel
+	cbk.velocity = velocity
+	cbk.time = time
 }
-func (cbk *CountingLexerCallback) ControlChange(channel uint8, controller uint8, value uint8) {
+func (cbk *CountingLexerCallback) NoteOn(channel uint8, pitch uint8, velocity uint8, time uint32) {
+	cbk.noteOn++
+	cbk.pitch = pitch
+	cbk.channel = channel
+	cbk.velocity = velocity
+	cbk.time = time
+}
+func (cbk *CountingLexerCallback) PolyphonicAfterTouch(channel uint8, pitch uint8, pressure uint8, time uint32) {
+	cbk.polyphonicAfterTouch++
+	cbk.channel = channel
+	cbk.pitch = pitch
+	cbk.pressure = pressure
+	cbk.time = time
+}
+func (cbk *CountingLexerCallback) ControlChange(channel uint8, controller uint8, value uint8, time uint32) {
 	cbk.controlChange++
 }
-func (cbk *CountingLexerCallback) ProgramChange(channel uint8, program uint8) { cbk.programChange++ }
-func (cbk *CountingLexerCallback) ChannelAfterTouch(channel uint8, value uint8) {
-	cbk.channelAfterTouch++
+func (cbk *CountingLexerCallback) ProgramChange(channel uint8, program uint8, time uint32) {
+	cbk.programChange++
 }
-func (cbk *CountingLexerCallback) PitchWheel(channel uint8, value uint16) { cbk.pitchWheel++ }
-func (cbk *CountingLexerCallback) TimeCodeQuarter(messageType uint8, values uint8) {
+func (cbk *CountingLexerCallback) ChannelAfterTouch(channel uint8, pressure uint8, time uint32) {
+	cbk.channelAfterTouch++
+	cbk.channel = channel
+	cbk.pressure = pressure
+	cbk.time = time
+}
+func (cbk *CountingLexerCallback) PitchWheel(channel uint8, value int16, absValue uint16, time uint32) {
+	cbk.pitchWheel++
+	cbk.pitchWheelValue = value
+	cbk.pitchWheelValueAbsolute = absValue
+	cbk.time = time
+	cbk.channel = channel
+}
+func (cbk *CountingLexerCallback) TimeCodeQuarter(messageType uint8, values uint8, time uint32) {
 	cbk.timeCodeQuarter++
 }
-func (cbk *CountingLexerCallback) SongPositionPointer(beats uint16) { cbk.songPositionPointer++ }
-func (cbk *CountingLexerCallback) SongSelect(song uint8)            { cbk.songSelect++ }
-func (cbk *CountingLexerCallback) Undefined1()                      { cbk.undefined1++ }
-func (cbk *CountingLexerCallback) Undefined2()                      { cbk.undefined2++ }
-func (cbk *CountingLexerCallback) TuneRequest()                     { cbk.tuneRequest++ }
-func (cbk *CountingLexerCallback) TimingClock()                     { cbk.timingClock++ }
-func (cbk *CountingLexerCallback) Undefined3()                      { cbk.undefined3++ }
-func (cbk *CountingLexerCallback) Start()                           { cbk.start++ }
-func (cbk *CountingLexerCallback) Continue()                        { cbk.continue_++ }
-func (cbk *CountingLexerCallback) Stop()                            { cbk.stop++ }
-func (cbk *CountingLexerCallback) Undefined4()                      { cbk.undefined4++ }
-func (cbk *CountingLexerCallback) ActiveSensing()                   { cbk.activeSensing++ }
-func (cbk *CountingLexerCallback) Reset()                           { cbk.reset++ }
-func (cbk *CountingLexerCallback) Done()                            { cbk.done++ }
+func (cbk *CountingLexerCallback) SongPositionPointer(beats uint16, time uint32) {
+	cbk.songPositionPointer++
+}
+func (cbk *CountingLexerCallback) SongSelect(song uint8, time uint32) { cbk.songSelect++ }
+func (cbk *CountingLexerCallback) Undefined1(time uint32)             { cbk.undefined1++ }
+func (cbk *CountingLexerCallback) Undefined2(time uint32)             { cbk.undefined2++ }
+func (cbk *CountingLexerCallback) TuneRequest(time uint32)            { cbk.tuneRequest++ }
+func (cbk *CountingLexerCallback) TimingClock(time uint32)            { cbk.timingClock++ }
+func (cbk *CountingLexerCallback) Undefined3(time uint32)             { cbk.undefined3++ }
+func (cbk *CountingLexerCallback) Start(time uint32)                  { cbk.start++ }
+func (cbk *CountingLexerCallback) Continue(time uint32)               { cbk.continue_++ }
+func (cbk *CountingLexerCallback) Stop(time uint32)                   { cbk.stop++ }
+func (cbk *CountingLexerCallback) Undefined4(time uint32)             { cbk.undefined4++ }
+func (cbk *CountingLexerCallback) ActiveSensing(time uint32)          { cbk.activeSensing++ }
+func (cbk *CountingLexerCallback) Reset(time uint32)                  { cbk.reset++ }
+func (cbk *CountingLexerCallback) Done(time uint32)                   { cbk.done++ }
 
 // MockReadSeeker is a mock Reader and Seeker. Constructed with data, behaves as a file reader.
 type MockReadSeeker struct {

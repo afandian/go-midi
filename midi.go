@@ -12,6 +12,7 @@
 package midi
 
 import (
+	"fmt"
 	"io"
 )
 
@@ -76,6 +77,8 @@ func (lexer *MidiLexer) next() (finished bool, err error) {
 		return
 	}
 
+	fmt.Println("Lexer next state", lexer.state)
+
 	// See comments for state values above.
 	switch lexer.state {
 	case ExpectHeader:
@@ -84,12 +87,15 @@ func (lexer *MidiLexer) next() (finished bool, err error) {
 			chunkHeader, err = parseChunkHeader(lexer.input)
 			if chunkHeader.chunkType != "MThd" {
 				err = ExpectedMthd
+
+				fmt.Println("ChunkHeader error ", err)
 				return
 			}
 
 			var header, err = parseHeaderData(lexer.input)
 
 			if err != nil {
+				fmt.Println("HeaderData error ", err)
 				return false, err
 			}
 
@@ -104,6 +110,7 @@ func (lexer *MidiLexer) next() (finished bool, err error) {
 			var chunkHeader, err = parseChunkHeader(lexer.input)
 
 			if err != nil {
+				fmt.Println("Chunk header error ", err)
 				return false, err
 			}
 
@@ -123,9 +130,124 @@ func (lexer *MidiLexer) next() (finished bool, err error) {
 			}
 		}
 
-		// case ExpectTrackEvent: {
-		// 	timeDelta, err := parseVarLength(lexer.input)
-		// }
+	case ExpectTrackEvent:
+		{
+			// If we're at the end of the chunk, change the state.
+			if lexer.nextChunkHeader != 0 {
+
+				// The chunk should end exactly on the chunk boundary, really.
+				if currentPosition == lexer.nextChunkHeader {
+					lexer.state = ExpectChunk
+					return false, nil
+				} else if currentPosition > lexer.nextChunkHeader {
+					fmt.Println("Chunk end error ", err)
+					return false, BadSizeChunk
+				}
+			}
+
+			// Time Delta
+			time, err := parseVarLength(lexer.input)
+			if err != nil {
+				fmt.Println("Time delta error ", err)
+				return false, err
+			}
+
+			// Message type, Message Channel
+			mType, channel, err := readStatusByte(lexer.input)
+
+			switch mType {
+			// NoteOff
+			case 0x8:
+				{
+					pitch, velocity, err := parseTwoUint7(lexer.input)
+
+					if err != nil {
+						fmt.Println("NoteOff error ", err)
+						return false, err
+					}
+
+					lexer.callback.NoteOff(channel, pitch, velocity, time)
+				}
+
+			// NoteOn
+			case 0x9:
+				{
+					pitch, velocity, err := parseTwoUint7(lexer.input)
+
+					if err != nil {
+						fmt.Println("NoteOn error ", err)
+						return false, err
+					}
+
+					lexer.callback.NoteOn(channel, pitch, velocity, time)
+				}
+
+			// Polyphonic Key Pressure
+			case 0xA:
+				{
+					pitch, pressure, err := parseTwoUint7(lexer.input)
+
+					if err != nil {
+						return false, err
+					}
+
+					lexer.callback.PolyphonicAfterTouch(channel, pitch, pressure, time)
+				}
+
+			// Control Change
+			case 0xB:
+				{
+					// channel, value, err := parseTwoUint7(lexer.input)
+
+				}
+
+			// Program Change
+			// case 0xC : {
+			// 	program, err := parseUint7(lexer.input)
+
+			// 	if err != nil {
+			// 		return false, err
+			// 		}
+
+			// }
+
+			// Channel Pressure
+			case 0xD:
+				{
+					value, err := parseUint7(lexer.input)
+
+					if err != nil {
+						return false, err
+					}
+
+					lexer.callback.ChannelAfterTouch(channel, value, time)
+				}
+
+			// Pitch Wheel
+			case 0xE:
+				{
+					// The value is a signed int (relative to centre), and absoluteValue is the actual value in the file.
+					value, absoluteValue, err := parsePitchWheelValue(lexer.input)
+
+					if err != nil {
+						return false, err
+					}
+
+					lexer.callback.PitchWheel(channel, value, absoluteValue, time)
+				}
+
+				// System Common and System Real-Time
+				// case 0xF:
+				// 	{
+				//		controller, value, err := parseTwoUint7(lexer.input)
+				// 	}
+
+				// This covers all cases.
+			}
+
+			// Now we need to see if we're at the end of a Track Data chunk.
+
+		}
 	}
 
 	return

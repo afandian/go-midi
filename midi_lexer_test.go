@@ -159,6 +159,234 @@ func TestMidiLexerShouldExpectTrackEvent(t *testing.T) {
 	assertIntsEqual(int(mockLexerCallback.chunkHeader.length), 0xEE, t)
 }
 
+// Expect a chunk, get MTrk.
+// Should store reported track length and go back to ExpectChunk at end of chunk.
+// ExpectChunk -> ExpectTrackEvent
+func TestMidiLexerShouldHandleChunkLengths(t *testing.T) {
+	// TODO
+}
+
+// Expect a chunk, get MTrk with a too-short length.
+// Should raise a BadSizeChunk error
+// ExpectChunk -> ExpectTrackEvent
+func TestMidiLexerShouldHandleChunkLengthError(t *testing.T) {
+	// TODO
+}
+
+// Expect a track event, parse a NoteOff message.
+// ExpectTrackEvent -> ExpectTrackEvent
+func TestNoteOff(t *testing.T) {
+	mockLexerCallback = new(CountingLexerCallback)
+
+	mockReadSeeker = NewMockReadSeeker(&[]byte{0x40, 0x85, 0x04, 0x03})
+	lexer = NewMidiLexer(mockReadSeeker, mockLexerCallback)
+
+	// Pre: ExpectChunk
+	// Should be ready for a chunk.
+	lexer.state = ExpectTrackEvent
+
+	finished, err = lexer.next()
+	assertNoError(err, t)
+
+	// Post:
+	// not finished yet
+	assertFalse(finished, t)
+
+	// ExpectChunk state.
+	assertIntsEqual(lexer.state, ExpectTrackEvent, t)
+
+	// callback.Track should have been called.
+	assertIntsEqual(mockLexerCallback.noteOff, 1, t)
+	assertUint32Equal(mockLexerCallback.time, 0x40, t)
+	assertUint8sEqual(mockLexerCallback.channel, 0x05, t)
+	assertUint8sEqual(mockLexerCallback.pitch, 0x04, t)
+	assertUint8sEqual(mockLexerCallback.velocity, 0x03, t)
+}
+
+// Expect a track event, parse a NoteOn message.
+// ExpectTrackEvent -> ExpectTrackEvent
+func TestNoteOn(t *testing.T) {
+	mockLexerCallback = new(CountingLexerCallback)
+
+	mockReadSeeker = NewMockReadSeeker(&[]byte{0x40, 0x95, 0x04, 0x03})
+	lexer = NewMidiLexer(mockReadSeeker, mockLexerCallback)
+
+	// Pre: ExpectChunk
+	// Should be ready for a chunk.
+	lexer.state = ExpectTrackEvent
+
+	finished, err = lexer.next()
+	assertNoError(err, t)
+
+	// Post:
+	// not finished yet
+	assertFalse(finished, t)
+
+	// ExpectChunk state.
+	assertIntsEqual(lexer.state, ExpectTrackEvent, t)
+
+	// callback.Track should have been called.
+	assertIntsEqual(mockLexerCallback.noteOn, 1, t)
+	assertUint32Equal(mockLexerCallback.time, 0x40, t)
+	assertUint8sEqual(mockLexerCallback.channel, 0x05, t)
+	assertUint8sEqual(mockLexerCallback.pitch, 0x04, t)
+	assertUint8sEqual(mockLexerCallback.velocity, 0x03, t)
+}
+
+// Expect a track event, parse a NoteOn message.
+// ExpectTrackEvent -> ExpectTrackEvent
+func TestNotePolyphonicKeyPressure(t *testing.T) {
+	mockLexerCallback = new(CountingLexerCallback)
+
+	mockReadSeeker = NewMockReadSeeker(&[]byte{0x40, 0xA7, 0x12, 0x34})
+	lexer = NewMidiLexer(mockReadSeeker, mockLexerCallback)
+
+	// Pre: ExpectChunk
+	// Should be ready for a chunk.
+	lexer.state = ExpectTrackEvent
+
+	finished, err = lexer.next()
+	assertNoError(err, t)
+
+	// Post:
+	// not finished yet
+	assertFalse(finished, t)
+
+	// ExpectChunk state.
+	assertIntsEqual(lexer.state, ExpectTrackEvent, t)
+
+	// callback.Track should have been called.
+	assertIntsEqual(mockLexerCallback.polyphonicAfterTouch, 1, t)
+	assertUint32Equal(mockLexerCallback.time, 0x40, t)
+	assertUint8sEqual(mockLexerCallback.channel, 0x07, t)
+	assertUint8sEqual(mockLexerCallback.pitch, 0x12, t)
+	assertUint8sEqual(mockLexerCallback.pressure, 0x34, t)
+}
+
+// Expect a track event, parse a  message.
+// ExpectTrackEvent -> ExpectTrackEvent
+func TestProgramChange(t *testing.T) {
+	// TODO
+}
+
+// Expect a track event, parse a  message.
+// ExpectTrackEvent -> ExpectTrackEvent
+func TestChannelPressure(t *testing.T) {
+	mockLexerCallback = new(CountingLexerCallback)
+
+	mockReadSeeker = NewMockReadSeeker(&[]byte{0x40, 0xD8, 0x56})
+	lexer = NewMidiLexer(mockReadSeeker, mockLexerCallback)
+
+	// Pre: ExpectChunk
+	// Should be ready for a chunk.
+	lexer.state = ExpectTrackEvent
+
+	finished, err = lexer.next()
+	assertNoError(err, t)
+
+	// Post:
+	// not finished yet
+	assertFalse(finished, t)
+
+	// ExpectChunk state.
+	assertIntsEqual(lexer.state, ExpectTrackEvent, t)
+
+	// callback.Track should have been called.
+	assertIntsEqual(mockLexerCallback.channelAfterTouch, 1, t)
+	assertUint32Equal(mockLexerCallback.time, 0x40, t)
+	assertUint8sEqual(mockLexerCallback.channel, 0x08, t)
+	assertUint8sEqual(mockLexerCallback.pressure, 0x56, t)
+}
+
+// Expect a track event, parse a  message.
+// ExpectTrackEvent -> ExpectTrackEvent
+func TestPitchWheel(t *testing.T) {
+	mockLexerCallback = new(CountingLexerCallback)
+	
+	// Three sequential pitch wheel events. NB the value is 14-bit, 
+	// split over two bytes, little end first!
+	mockReadSeeker = NewMockReadSeeker(&[]byte{
+		0x10, 0xE9, 0x00, 0x40, // 0x2000 should be centre
+		0x20, 0xE8, 0x34, 0x24, // 0x1234 encoded
+		0x50, 0xE7, 0x00, 0x40})
+	lexer = NewMidiLexer(mockReadSeeker, mockLexerCallback)
+
+	/* 
+	 * FIRST
+	 */
+
+	// Pre: ExpectChunk
+	// Should be ready for a chunk.
+	lexer.state = ExpectTrackEvent
+
+	finished, err = lexer.next()
+	assertNoError(err, t)
+
+	// Post:
+	// not finished yet
+	assertFalse(finished, t)
+
+	// ExpectChunk state.
+	assertIntsEqual(lexer.state, ExpectTrackEvent, t)
+
+	// callback.Track should have been called.
+	assertIntsEqual(mockLexerCallback.pitchWheel, 1, t)
+	assertUint32Equal(mockLexerCallback.time, 0x10, t)
+	assertUint8sEqual(mockLexerCallback.channel, 0x09, t)
+	assertInt16sEqual(mockLexerCallback.pitchWheelValue, 0x00, t)
+	assertUint16Equal(mockLexerCallback.pitchWheelValueAbsolute, 0x2000, t)
+
+	/* 
+	 * SECOND
+	 */
+	 
+	// Pre: ExpectChunk
+	// Should be ready for a chunk.
+	lexer.state = ExpectTrackEvent
+
+	finished, err = lexer.next()
+	assertNoError(err, t)
+
+	// Post:
+	// not finished yet
+	assertFalse(finished, t)
+
+	// ExpectChunk state.
+	assertIntsEqual(lexer.state, ExpectTrackEvent, t)
+
+	// callback.Track should have been called.
+	assertIntsEqual(mockLexerCallback.pitchWheel, 2, t)
+	assertUint32Equal(mockLexerCallback.time, 0x20, t)
+	assertUint8sEqual(mockLexerCallback.channel, 0x08, t)
+	assertInt16sEqual(mockLexerCallback.pitchWheelValue, -0xDCC, t)
+	assertUint16Equal(mockLexerCallback.pitchWheelValueAbsolute, 0x1234, t)
+
+	/* 
+	 * THIRD
+	 */
+	 
+	// Pre: ExpectChunk
+	// Should be ready for a chunk.
+	lexer.state = ExpectTrackEvent
+
+	finished, err = lexer.next()
+	assertNoError(err, t)
+
+	// Post:
+	// not finished yet
+	assertFalse(finished, t)
+
+	// ExpectChunk state.
+	assertIntsEqual(lexer.state, ExpectTrackEvent, t)
+
+	// callback.Track should have been called.
+	assertIntsEqual(mockLexerCallback.pitchWheel, 3, t)
+	assertUint32Equal(mockLexerCallback.time, 0x50, t)
+	assertUint8sEqual(mockLexerCallback.channel, 0x07, t)
+	assertInt16sEqual(mockLexerCallback.pitchWheelValue, 0x00, t)
+	assertUint16Equal(mockLexerCallback.pitchWheelValueAbsolute, 0x2000, t)
+}
+
 /*
  * Exceptional state transitions. 
  */

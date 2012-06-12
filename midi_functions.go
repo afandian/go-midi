@@ -13,6 +13,7 @@ package midi
 
 import (
 	"io"
+	"fmt"
 )
 
 // parseUint32 parse a 4-byte 32 bit integer from a ReadSeeker.
@@ -62,6 +63,78 @@ func parseUint16(reader io.ReadSeeker) (uint16, error) {
 	value |= uint16(buffer[0]) << 8
 
 	return value, nil
+}
+
+// parseUint7 parses a 7-bit bit integer from a ReadSeeker, ignoring the high bit.
+// It returns the 8-bit value and an error.
+func parseUint7(reader io.ReadSeeker) (uint8, error) {
+
+	var buffer []byte = make([]byte, 1)
+	num, err := reader.Read(buffer)
+
+	// If we couldn't read 1 bytes, that's a problem.
+	if num != 1 {
+		return 0, UnexpectedEndOfFile
+	}
+
+	// If there was some other problem, that's also a problem.
+	if err != nil {
+		return 0, err
+	}
+
+	return (buffer[0] & 0x7f), nil
+}
+
+// parseTwoUint7 parses two 7-bit bit integer stored in consecutive bytes from a ReadSeeker, ignoring the high bit in each.
+// It returns the 8-bit value and an error.
+func parseTwoUint7(reader io.ReadSeeker) (uint8, uint8, error) {
+
+	var buffer []byte = make([]byte, 2)
+	num, err := reader.Read(buffer)
+
+	// If we couldn't read 1 bytes, that's a problem.
+	if num != 2 {
+		return 0, 0, UnexpectedEndOfFile
+	}
+
+	// If there was some other problem, that's also a problem.
+	if err != nil {
+		return 0, 0, err
+	}
+
+	return (buffer[0] & 0x7f), (buffer[1] & 0x7f), nil
+}
+
+// parsePitchWheelValue parses a 14-bit signed value, which becomes a signed int16.
+// The least significant 7 bits are stored in the first byte, the 7 most significant bites are stored in the second.
+// Return the signed value relative to the centre, and the absolute value.
+// This is tested in midi_lexer_test.go TestPitchWheel
+func parsePitchWheelValue(reader io.ReadSeeker) (int16, uint16, error) {
+
+	var buffer []byte = make([]byte, 2)
+	num, err := reader.Read(buffer)
+
+	// If we couldn't read 2 bytes, that's a problem.
+	if num != 2 {
+		return 0, 0, UnexpectedEndOfFile
+	}
+
+	// If there was some other problem, that's also a problem.
+	if err != nil {
+		return 0, 0, err
+	}
+
+	var val uint16 = 0
+	
+	val = uint16((buffer[1]) & 0x7f) << 7
+	val |= uint16(buffer[0]) & 0x7f
+	fmt.Println(val)
+
+	// log.Println()
+	// Turn into a signed value relative to the centre.
+	var relative int16 = int16(val) - 0x2000
+
+	return relative, val, nil
 }
 
 // parseVarLength parses a variable length value from a ReadSeeker.

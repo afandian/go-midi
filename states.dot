@@ -11,4 +11,8 @@ digraph lexer_state {
 	ExpectHeader -> ExpectChunk [label="Began(), Header()"];
 	ExpectChunk -> ExpectChunk [label="Skip unrecognised chunk type"];
 	ExpectChunk -> ExpectTrackEvent [label="Track()"]
+
+	ExpectTrackEvent -> ExpectTrackEvent [label="Track event"]
+
+	ExpectTrackEvent -> ExpectChunk [label="End of chunk"]
 }
