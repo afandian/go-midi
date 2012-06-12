@@ -13,7 +13,6 @@ package midi
 
 import (
 	"io"
-	"fmt"
 )
 
 // parseUint32 parse a 4-byte 32 bit integer from a ReadSeeker.
@@ -187,7 +186,6 @@ func readStatusByte(reader io.ReadSeeker) (messageType uint8, messageChannel uin
 		return 0, 0, err
 	}
 
-	fmt.Println("buf ", buffer)
 	messageType = (buffer[0] & 0xF0) >> 4
 	messageChannel = buffer[0] & 0x0F
 

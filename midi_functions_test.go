@@ -348,8 +348,8 @@ func TestParseHeaderData(t *testing.T) {
 
 // readStatusByte should read the status byte and return type and channel correctly.
 func TestReadStatusByte(t *testing.T) {
-		expectedType := []uint8{ 1, 2, 3, 4 }
-		expectedChannel := []uint8{ 5, 4, 3, 2 }
+	expectedType := []uint8{1, 2, 3, 4}
+	expectedChannel := []uint8{5, 4, 3, 2}
 
 	input := [][]byte{
 		[]byte{0x15},
