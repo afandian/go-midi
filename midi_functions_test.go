@@ -345,3 +345,35 @@ func TestParseHeaderData(t *testing.T) {
 		t.Fatal("Expected exception but got none")
 	}
 }
+
+// readStatusByte should read the status byte and return type and channel correctly.
+func TestReadStatusByte(t *testing.T) {
+		expectedType := []uint8{ 1, 2, 3, 4 }
+		expectedChannel := []uint8{ 5, 4, 3, 2 }
+
+	input := [][]byte{
+		[]byte{0x15},
+		[]byte{0x24},
+		[]byte{0x33},
+		[]byte{0x42},
+	}
+
+	var numItems = len(input)
+
+	for i := 0; i < numItems; i++ {
+		var reader = NewMockReadSeeker(&input[i])
+		var messageType, messageChannel, err = readStatusByte(reader)
+
+		if messageType != expectedType[i] {
+			t.Fatal("Expected type", expectedType[i], " got ", messageType)
+		}
+
+		if messageChannel != expectedChannel[i] {
+			t.Fatal("Expected channel", expectedChannel[i], " got ", messageChannel)
+		}
+
+		if err != nil {
+			t.Fatal("Expected no error got ", err)
+		}
+	}
+}

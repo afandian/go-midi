@@ -13,6 +13,7 @@ package midi
 
 import (
 	"io"
+	"fmt"
 )
 
 // parseUint32 parse a 4-byte 32 bit integer from a ReadSeeker.
@@ -169,4 +170,26 @@ func parseHeaderData(reader io.ReadSeeker) (HeaderData, error) {
 	}
 
 	return headerData, nil
+}
+
+// readStatusByte reads the track event status byte and returns the type and channel
+func readStatusByte(reader io.ReadSeeker) (messageType uint8, messageChannel uint8, err error) {
+	var buffer []byte = make([]byte, 1)
+	num, err := reader.Read(buffer)
+
+	// If we couldn't read 1 byte, that's a problem.
+	if num != 1 {
+		return 0, 0, UnexpectedEndOfFile
+	}
+
+	// If there was some other problem, that's also a problem.
+	if err != nil {
+		return 0, 0, err
+	}
+
+	fmt.Println("buf ", buffer)
+	messageType = (buffer[0] & 0xF0) >> 4
+	messageChannel = buffer[0] & 0x0F
+
+	return
 }
