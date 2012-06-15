@@ -7,13 +7,15 @@
 // Joe Wass 2012
 // joe@afandian.com
 
-// Functions for reading MIDI data.
+/*
+ * Functions for reading actual MIDI data in the various formats that crop up.
+ */
 
 package midi
 
 import (
-	"io"
 	"fmt"
+	"io"
 )
 
 // parseUint32 parse a 4-byte 32 bit integer from a ReadSeeker.
@@ -92,7 +94,7 @@ func parseTwoUint7(reader io.ReadSeeker) (uint8, uint8, error) {
 	var buffer []byte = make([]byte, 2)
 	num, err := reader.Read(buffer)
 
-	// If we couldn't read 1 bytes, that's a problem.
+	// If we couldn't read 2 bytes, that's a problem.
 	if num != 2 {
 		return 0, 0, UnexpectedEndOfFile
 	}
@@ -105,11 +107,32 @@ func parseTwoUint7(reader io.ReadSeeker) (uint8, uint8, error) {
 	return (buffer[0] & 0x7f), (buffer[1] & 0x7f), nil
 }
 
+// parseUint8 parses an 8-bit bit integer stored in a bytes from a ReadSeeker.
+// It returns a single uint8.
+func parseUint8(reader io.ReadSeeker) (uint8, error) {
+
+	var buffer []byte = make([]byte, 1)
+	num, err := reader.Read(buffer)
+
+	// If we couldn't read 1 bytes, that's a problem.
+	if num != 1 {
+		return 0, UnexpectedEndOfFile
+	}
+
+	// If there was some other problem, that's also a problem.
+	if err != nil {
+		return 0, err
+	}
+
+	return uint8(buffer[0]), nil
+}
+
+
 // parsePitchWheelValue parses a 14-bit signed value, which becomes a signed int16.
 // The least significant 7 bits are stored in the first byte, the 7 most significant bites are stored in the second.
 // Return the signed value relative to the centre, and the absolute value.
 // This is tested in midi_lexer_test.go TestPitchWheel
-func parsePitchWheelValue(reader io.ReadSeeker) (int16, uint16, error) {
+func parsePitchWheelValue(reader io.ReadSeeker) (relative int16, absolute uint16, err error) {
 
 	var buffer []byte = make([]byte, 2)
 	num, err := reader.Read(buffer)
@@ -125,14 +148,14 @@ func parsePitchWheelValue(reader io.ReadSeeker) (int16, uint16, error) {
 	}
 
 	var val uint16 = 0
-	
-	val = uint16((buffer[1]) & 0x7f) << 7
+
+	val = uint16((buffer[1])&0x7f) << 7
 	val |= uint16(buffer[0]) & 0x7f
 	fmt.Println(val)
 
 	// log.Println()
 	// Turn into a signed value relative to the centre.
-	var relative int16 = int16(val) - 0x2000
+	relative = int16(val) - 0x2000
 
 	return relative, val, nil
 }
@@ -263,4 +286,30 @@ func readStatusByte(reader io.ReadSeeker) (messageType uint8, messageChannel uin
 	messageChannel = buffer[0] & 0x0F
 
 	return
+}
+
+func parseText(reader io.ReadSeeker) (string, error) {
+	length, err := parseVarLength(reader)
+
+	if err != nil {
+		return "", err
+	}
+
+	var buffer []byte = make([]byte, length)
+
+	num, err := reader.Read(buffer)
+
+	// If we couldn't read the entire expected-length buffer, that's a problem.
+	if num != int(length) {
+		return "", UnexpectedEndOfFile
+	}
+
+	// If there was some other problem, that's also a problem.
+	if err != nil {
+		return "", err
+	}
+
+	// TODO: Data should be ASCII but might go up to 0xFF.
+	// What will Go do? Try and decode UTF-8?
+	return string(buffer), nil
 }
