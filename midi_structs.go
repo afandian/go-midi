@@ -7,7 +7,9 @@
 // Joe Wass 2012
 // joe@afandian.com
 
-// Data structures
+/*
+ * Data structures passed to the Lexer callback.
+ */
 
 package midi
 
@@ -23,7 +25,7 @@ type HeaderData struct {
 	numTracks uint16
 
 	// One of MetricalTimeFormat or TimeCodeTimeFormat
-	timeFormat bool
+	timeFormat uint
 
 	// Used if TimeCodeTimeFormat
 	// Currently data is not un-packed.

@@ -7,7 +7,10 @@
 // Joe Wass 2012
 // joe@afandian.com
 
-// Test helper functions.
+/*
+ * Test helper functions.
+ * Bits and pieces that don't appear to be in the test framework.
+ */
 
 package midi
 
@@ -91,5 +94,12 @@ func assertNoError(e error, test *testing.T) {
 func assertError(e error, expected error, test *testing.T) {
 	if e != expected {
 		test.Fatal("Should have been ", expected, " was ", e)
+	}
+}
+
+// Assert two strings are equal
+func assertStringsEqual(a string, b string, test *testing.T) {
+	if a != b {
+		test.Fatal(a, " != ", b)
 	}
 }

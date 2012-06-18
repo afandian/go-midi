@@ -7,7 +7,10 @@
 // Joe Wass 2012
 // joe@afandian.com
 
-// Interface
+/*
+ * Interfaces.
+ * Contains the MidiLexerCallback interface which you should implement in order to use the Lexer.
+ */
 
 package midi
 
@@ -56,4 +59,16 @@ type MidiLexerCallback interface {
 	ActiveSensing(time uint32)
 	Reset(time uint32)
 	Done(time uint32)
+
+	// Meta Events
+
+	SequenceNumber(channel uint8, number uint16, numberGiven bool, time uint32)
+	Text(channel uint8, text string, time uint32)
+	CopyrightText(channel uint8, text string, time uint32)
+	SequenceName(channel uint8, text string, time uint32)
+	TrackInstrumentName(channel uint8, text string, time uint32)
+	LyricText(channel uint8, text string, time uint32)
+	MarkerText(channel uint8, text string, time uint32)
+	CuePointText(channel uint8, text string, time uint32)
+	EndOfTrack(channel uint8, time uint32)
 }

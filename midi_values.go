@@ -20,6 +20,6 @@ const (
 
 // Time code formats used in HeaderData.timeFormat
 const (
-	MetricalTimeFormat = false
-	TimeCodeTimeFormat = true
+	MetricalTimeFormat = iota
+	TimeCodeTimeFormat = iota
 )

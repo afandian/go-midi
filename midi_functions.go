@@ -127,7 +127,6 @@ func parseUint8(reader io.ReadSeeker) (uint8, error) {
 	return uint8(buffer[0]), nil
 }
 
-
 // parsePitchWheelValue parses a 14-bit signed value, which becomes a signed int16.
 // The least significant 7 bits are stored in the first byte, the 7 most significant bites are stored in the second.
 // Return the signed value relative to the centre, and the absolute value.

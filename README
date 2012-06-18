@@ -6,20 +6,20 @@ http://blog.afandian.com
 
 Use of this source code is governed by the MIT license which can be found in the LICENSE file.
 
-This is a library to parse SMF MIDI files. It's my first Go project and I'm working through http://www.music.mcgill.ca/~ich/classes/mumt306/midiformat.pdf without making reference to any other code to try to make it as idiomatic to Go as possible. 
+This is a library to parse SMF MIDI files. It is fully unit tested.
 
-The aim is to have full unit tests for every function and exceptional flow, to produce a robust and precise library.
+To use this library, write a callback object and pass it to the MidiLexer, along with a MIDI file. The Lexer will call events on the callback as they occur in the file.
 
-The library is split into layers:
+To install, run: 
+	go get "github.com/afandian/go-midi"
 
-MidiLexer takes an io.ReadSeeker and an object that conforms to MidiLexerCallback. MidiLexer is an event-based lexer, which calls methods on the callback object.
+To use it in your programs:
+	import midi "github.com/afandian/go-midi"
 
-MidiParser is an object that conforms to MidiLexerCallback. It takes a callback of type MidiParserCallback, and provides an extra layer of interpretation.
+See the examples for how to use.
 
-To use this library, either write a callback that conforms to MidiLexerCallback to get the raw stream (not recommended) or a callback that conforms to MidiParserCallback (recommended).
+References:
 
-io.ReadSeeker --> MidiLexer <-- MidiLexerCallback <-- MidiParserCallback
-
-There is a full test suite, including mock objects for the io.ReadSeeker.
-
-THIS IS A WORK IN PROGRESS, currently working on writing and testing MidiLexer.
+http://faydoc.tripod.com/formats/mid.htm
+http://www.music.mcgill.ca/~ich/classes/mumt306/midiformat.pdf
+http://www.sonicspot.com/guide/midifiles.html

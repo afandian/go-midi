@@ -7,7 +7,10 @@
 // Joe Wass 2012
 // joe@afandian.com
 
-// Tests for lexer. Slightly higher level.
+/*
+ * Tests for lexer. 
+ * Check that the state transitions work fine and that the lexer can cope with real streams of MIDI data.
+ */
 
 package midi
 
@@ -298,11 +301,11 @@ func TestChannelPressure(t *testing.T) {
 	assertUint8sEqual(mockLexerCallback.pressure, 0x56, t)
 }
 
-// Expect a track event, parse a  message.
+// Expect a track event, parse a PitchWheel message.
 // ExpectTrackEvent -> ExpectTrackEvent
 func TestPitchWheel(t *testing.T) {
 	mockLexerCallback = new(CountingLexerCallback)
-	
+
 	// Three sequential pitch wheel events. NB the value is 14-bit, 
 	// split over two bytes, little end first!
 	mockReadSeeker = NewMockReadSeeker(&[]byte{
@@ -339,7 +342,7 @@ func TestPitchWheel(t *testing.T) {
 	/* 
 	 * SECOND
 	 */
-	 
+
 	// Pre: ExpectChunk
 	// Should be ready for a chunk.
 	lexer.state = ExpectTrackEvent
@@ -364,7 +367,7 @@ func TestPitchWheel(t *testing.T) {
 	/* 
 	 * THIRD
 	 */
-	 
+
 	// Pre: ExpectChunk
 	// Should be ready for a chunk.
 	lexer.state = ExpectTrackEvent
@@ -385,6 +388,67 @@ func TestPitchWheel(t *testing.T) {
 	assertUint8sEqual(mockLexerCallback.channel, 0x07, t)
 	assertInt16sEqual(mockLexerCallback.pitchWheelValue, 0x00, t)
 	assertUint16Equal(mockLexerCallback.pitchWheelValueAbsolute, 0x2000, t)
+}
+
+// Expect a track event, get SequenceNumber with no number.
+// ExpectTrackEvent -> ExpectTrackEvent
+func TestNilSequenceNumber(t *testing.T) {
+	mockLexerCallback = new(CountingLexerCallback)
+
+	// Three sequential pitch wheel events. NB the value is 14-bit, 
+	// split over two bytes, little end first!
+	mockReadSeeker = NewMockReadSeeker(&[]byte{0x09, 0xFF, 0x00, 0x00})
+	lexer = NewMidiLexer(mockReadSeeker, mockLexerCallback)
+
+	// Pre: ExpectChunk
+	// Should be ready for a chunk.
+	lexer.state = ExpectTrackEvent
+
+	finished, err = lexer.next()
+	assertNoError(err, t)
+
+	// Post:
+	// not finished yet
+	assertFalse(finished, t)
+
+	// ExpectChunk state.
+	assertIntsEqual(lexer.state, ExpectTrackEvent, t)
+
+	// callback.Track should have been called.
+	assertIntsEqual(mockLexerCallback.sequenceNumber, 1, t)
+	assertUint32Equal(mockLexerCallback.time, 0x09, t)
+	assertFalse(mockLexerCallback.sequenceNumberGiven, t)
+}
+
+// Expect a track event, get SequenceNumber with a number supplied.
+// ExpectTrackEvent -> ExpectTrackEvent
+func TestSequenceNumber(t *testing.T) {
+	mockLexerCallback = new(CountingLexerCallback)
+
+	// Three sequential pitch wheel events. NB the value is 14-bit, 
+	// split over two bytes, little end first!
+	mockReadSeeker = NewMockReadSeeker(&[]byte{0x09, 0xFF, 0x00, 0x02, 0xA7, 0xC5})
+	lexer = NewMidiLexer(mockReadSeeker, mockLexerCallback)
+
+	// Pre: ExpectChunk
+	// Should be ready for a chunk.
+	lexer.state = ExpectTrackEvent
+
+	finished, err = lexer.next()
+	assertNoError(err, t)
+
+	// Post:
+	// not finished yet
+	assertFalse(finished, t)
+
+	// ExpectChunk state.
+	assertIntsEqual(lexer.state, ExpectTrackEvent, t)
+
+	// callback.Track should have been called.
+	assertIntsEqual(mockLexerCallback.sequenceNumber, 1, t)
+	assertUint32Equal(mockLexerCallback.time, 0x09, t)
+	assertUint16Equal(mockLexerCallback.sequenceNumberValue, 42949, t)
+	assertTrue(mockLexerCallback.sequenceNumberGiven, t)
 }
 
 /*

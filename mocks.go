@@ -7,7 +7,10 @@
 // Joe Wass 2012
 // joe@afandian.com
 
-// Mocks implementations for testing.
+/*
+ * Mocks implementations for testing.
+ * In order to check that the right calls are made to the LexerCallback by the Lexer, a mock callback is pssed to it during tests.
+ */
 
 package midi
 
@@ -15,7 +18,7 @@ import (
 	"io"
 )
 
-// A mock implementation of LexerCallback that does nothing
+// A mock implementation of LexerCallback that does nothing.
 type MockLexerCallback struct{}
 
 func (*MockLexerCallback) Header(header HeaderData)                                        {}
@@ -48,7 +51,19 @@ func (*MockLexerCallback) ActiveSensing(time uint32)                            
 func (*MockLexerCallback) Reset(time uint32)                                                       {}
 func (*MockLexerCallback) Done(time uint32)                                                        {}
 
-// A mock implementation of LexerCallback that counts each method call
+func (*MockLexerCallback) SequenceNumber(channel uint8, number uint16, numberGiven bool, time uint32) {
+}
+func (*MockLexerCallback) Text(channel uint8, text string, time uint32)                {}
+func (*MockLexerCallback) CopyrightText(channel uint8, text string, time uint32)       {}
+func (*MockLexerCallback) SequenceName(channel uint8, text string, time uint32)        {}
+func (*MockLexerCallback) TrackInstrumentName(channel uint8, text string, time uint32) {}
+func (*MockLexerCallback) LyricText(channel uint8, text string, time uint32)           {}
+func (*MockLexerCallback) MarkerText(channel uint8, text string, time uint32)          {}
+func (*MockLexerCallback) CuePointText(channel uint8, text string, time uint32)        {}
+func (*MockLexerCallback) EndOfTrack(channel uint8, time uint32)                       {}
+
+// A mock implementation of LexerCallback that counts each method call and stores the most recent values,
+// so that calls can be verified.
 type CountingLexerCallback struct {
 
 	// Callback counts
@@ -80,6 +95,15 @@ type CountingLexerCallback struct {
 	activeSensing        int
 	reset                int
 	done                 int
+	endOfTrack           int
+	text                 int
+	copyrightText        int
+	sequenceName         int
+	trackInstrumentName  int
+	lyricText            int
+	markerText           int
+	cuePointText         int
+	sequenceNumber       int
 
 	// Most recent values
 	headerData  HeaderData
@@ -89,9 +113,12 @@ type CountingLexerCallback struct {
 	time        uint32
 	velocity    uint8
 	pressure    uint8
+	textValue   string
 
 	pitchWheelValue         int16
 	pitchWheelValueAbsolute uint16
+	sequenceNumberGiven     bool
+	sequenceNumberValue     uint16
 }
 
 func (cbk *CountingLexerCallback) Header(header HeaderData) { cbk.header++; cbk.headerData = header }
@@ -160,7 +187,44 @@ func (cbk *CountingLexerCallback) ActiveSensing(time uint32)          { cbk.acti
 func (cbk *CountingLexerCallback) Reset(time uint32)                  { cbk.reset++ }
 func (cbk *CountingLexerCallback) Done(time uint32)                   { cbk.done++ }
 
+func (cbk *CountingLexerCallback) SequenceNumber(channel uint8, number uint16, numberGiven bool, time uint32) {
+	cbk.sequenceNumber++
+	cbk.time = time
+	cbk.sequenceNumberValue = number
+	cbk.sequenceNumberGiven = numberGiven
+}
+func (cbk *CountingLexerCallback) Text(channel uint8, text string, time uint32) {
+	cbk.text++
+	cbk.textValue = text
+}
+func (cbk *CountingLexerCallback) CopyrightText(channel uint8, text string, time uint32) {
+	cbk.copyrightText++
+	cbk.textValue = text
+}
+func (cbk *CountingLexerCallback) SequenceName(channel uint8, text string, time uint32) {
+	cbk.sequenceName++
+	cbk.textValue = text
+}
+func (cbk *CountingLexerCallback) TrackInstrumentName(channel uint8, text string, time uint32) {
+	cbk.trackInstrumentName++
+	cbk.textValue = text
+}
+func (cbk *CountingLexerCallback) LyricText(channel uint8, text string, time uint32) {
+	cbk.lyricText++
+	cbk.textValue = text
+}
+func (cbk *CountingLexerCallback) MarkerText(channel uint8, text string, time uint32) {
+	cbk.lyricText++
+	cbk.textValue = text
+}
+func (cbk *CountingLexerCallback) CuePointText(channel uint8, text string, time uint32) {
+	cbk.cuePointText++
+	cbk.textValue = text
+}
+func (cbk *CountingLexerCallback) EndOfTrack(channel uint8, time uint32) { cbk.endOfTrack++ }
+
 // MockReadSeeker is a mock Reader and Seeker. Constructed with data, behaves as a file reader.
+// This is used to pass MIDI data to the Lexer and also to the MIDI value parsing functions.
 type MockReadSeeker struct {
 	data     *[]byte
 	position int64
@@ -186,7 +250,9 @@ func (reader *MockReadSeeker) Read(p []byte) (n int, err error) {
 	return int(amount), nil
 }
 
-// Seek sets the offset for the next Read or Write to offset, interpreted according to whence: 0 means relative to the origin of the file, 1 means relative to the current offset, and 2 means relative to the end. Seek returns the new offset and an Error, if any.
+// Seek sets the offset for the next Read or Write to offset, interpreted according to the value of `whence`: 
+// 0 means relative to the origin of the file, 1 means relative to the current offset, and 2 means relative to the end.
+// Seek returns the new offset and an Error, if any.
 func (reader *MockReadSeeker) Seek(offset int64, whence int) (ret int64, err error) {
 	switch whence {
 	case 0:

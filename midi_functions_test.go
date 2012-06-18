@@ -248,7 +248,6 @@ func TestParse16Bit(t *testing.T) {
 	}
 }
 
-
 // Test for parseChunkHeader.
 func TestParseChunkHeader(t *testing.T) {
 	// Headers for two popular chunk types.
@@ -433,7 +432,7 @@ func TestReadStatusByte(t *testing.T) {
 // Test that parsePitchWheelValue works for a number of values.
 // It returns both unsigned absolute and signed relative values.
 func TestParsePitchWheelValue(t *testing.T) {
-	
+
 	// 0x200 should be centre, i.e. 0 relative.
 	mockReadSeeker := NewMockReadSeeker(&[]byte{
 		0x00, 0x40})
@@ -447,7 +446,7 @@ func TestParsePitchWheelValue(t *testing.T) {
 	// 0x1234 encoded
 	mockReadSeeker = NewMockReadSeeker(&[]byte{
 		0x34, 0x24, // 0x1234 encoded
-		})
+	})
 
 	relative, absolute, err = parsePitchWheelValue(mockReadSeeker)
 

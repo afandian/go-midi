@@ -7,7 +7,10 @@
 // Joe Wass 2012
 // joe@afandian.com
 
-// Data structures
+/*
+ * Errors that may arise during parsing.
+ * The LexerCallback may recieve any of these.
+ */
 
 package midi
 

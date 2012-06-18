@@ -7,7 +7,10 @@
 // Joe Wass 2012
 // joe@afandian.com
 
-// Tests for test mocks.
+/*
+ * Tests for test mocks.
+ * Ensure that test mocks work correctly so we can trust tests.
+ */
 
 package midi
 
