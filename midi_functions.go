@@ -207,8 +207,8 @@ func parseChunkHeader(reader io.ReadSeeker) (ChunkHeader, error) {
 		return chunk, err
 	}
 
-	chunk.length, err = parseUint32(reader)
-	chunk.chunkType = string(chunkTypeBuffer)
+	chunk.Length, err = parseUint32(reader)
+	chunk.ChunkType = string(chunkTypeBuffer)
 
 	// parseUint32 might return an error.
 	if err != nil {
@@ -226,19 +226,19 @@ func parseHeaderData(reader io.ReadSeeker) (HeaderData, error) {
 	var err error
 
 	// Format
-	headerData.format, err = parseUint16(reader)
+	headerData.Format, err = parseUint16(reader)
 
 	if err != nil {
 		return headerData, err
 	}
 
 	// Should be one of 0, 1, 2
-	if headerData.format > 2 {
+	if headerData.Format > 2 {
 		return headerData, UnsupportedSmfFormat
 	}
 
 	// Num tracks
-	headerData.numTracks, err = parseUint16(reader)
+	headerData.NumTracks, err = parseUint16(reader)
 
 	if err != nil {
 		return headerData, err
@@ -250,13 +250,13 @@ func parseHeaderData(reader io.ReadSeeker) (HeaderData, error) {
 	// "If bit 15 of <division> is zero, the bits 14 thru 0 represent the number
 	// of delta time "ticks" which make up a quarter-note." 
 	if division&0x8000 == 0x0000 {
-		headerData.ticksPerQuarterNote = division & 0x7FFF
-		headerData.timeFormat = MetricalTimeFormat
+		headerData.TicksPerQuarterNote = division & 0x7FFF
+		headerData.TimeFormat = MetricalTimeFormat
 	} else {
 		// TODO: Can't be bothered to implement this bit just now. 
 		// If you want it, write it!
-		headerData.timeFormatData = division & 0x7FFF
-		headerData.timeFormat = TimeCodeTimeFormat
+		headerData.TimeFormatData = division & 0x7FFF
+		headerData.TimeFormat = TimeCodeTimeFormat
 	}
 
 	if err != nil {

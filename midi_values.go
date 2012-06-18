@@ -18,7 +18,7 @@ const (
 	SequentialTracks        = 2
 )
 
-// Time code formats used in HeaderData.timeFormat
+// Time code formats used in HeaderData.TimeFormat
 const (
 	MetricalTimeFormat = iota
 	TimeCodeTimeFormat = iota

@@ -89,14 +89,14 @@ func TestLexerShouldExpectHeader(t *testing.T) {
 
 	// Began() was called with the right values.
 	assertIntsEqual(int(mockLexerCallback.header), 1, t)
-	assertIntsEqual(int(mockLexerCallback.headerData.format), 1, t)
-	assertIntsEqual(int(mockLexerCallback.headerData.numTracks), 2, t)
+	assertIntsEqual(int(mockLexerCallback.headerData.Format), 1, t)
+	assertIntsEqual(int(mockLexerCallback.headerData.NumTracks), 2, t)
 
-	if mockLexerCallback.headerData.timeFormat != MetricalTimeFormat {
+	if mockLexerCallback.headerData.TimeFormat != MetricalTimeFormat {
 		t.Fatal("Was not MetricalTimeFormat")
 	}
 
-	assertIntsEqual(int(mockLexerCallback.headerData.ticksPerQuarterNote), 200, t)
+	assertIntsEqual(int(mockLexerCallback.headerData.TicksPerQuarterNote), 200, t)
 }
 
 // Expect a chunk, get an unrecognised type. Should skip to next.
@@ -159,7 +159,7 @@ func TestMidiLexerShouldExpectTrackEvent(t *testing.T) {
 
 	// callback.Track should have been called.
 	assertIntsEqual(mockLexerCallback.track, 1, t)
-	assertIntsEqual(int(mockLexerCallback.chunkHeader.length), 0xEE, t)
+	assertIntsEqual(int(mockLexerCallback.chunkHeader.Length), 0xEE, t)
 }
 
 // Expect a chunk, get MTrk.

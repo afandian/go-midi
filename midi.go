@@ -90,7 +90,7 @@ func (lexer *MidiLexer) next() (finished bool, err error) {
 
 			var chunkHeader ChunkHeader
 			chunkHeader, err = parseChunkHeader(lexer.input)
-			if chunkHeader.chunkType != "MThd" {
+			if chunkHeader.ChunkType != "MThd" {
 				err = ExpectedMthd
 
 				fmt.Println("ChunkHeader error ", err)
@@ -122,10 +122,10 @@ func (lexer *MidiLexer) next() (finished bool, err error) {
 			}
 
 			lexer.callback.Track(chunkHeader)
-			lexer.nextChunkHeader = int64(chunkHeader.length) + currentPosition
+			lexer.nextChunkHeader = int64(chunkHeader.Length) + currentPosition
 
 			// If the header is of an unknown type, skip over it.
-			if chunkHeader.chunkType != "MTrk" {
+			if chunkHeader.ChunkType != "MTrk" {
 				lexer.input.Seek(lexer.nextChunkHeader, 1)
 
 				// Then we expect another chunk.

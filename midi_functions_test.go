@@ -272,11 +272,11 @@ func TestParseChunkHeader(t *testing.T) {
 	reader = NewMockReadSeeker(&MThd)
 	header, err = parseChunkHeader(reader)
 
-	if header.chunkType != "MThd" {
+	if header.ChunkType != "MThd" {
 		t.Fatal("Got ", header, " expected MThd")
 	}
 
-	if header.length != 6 {
+	if header.Length != 6 {
 		t.Fatal("Got ", header, " expected 6")
 	}
 
@@ -288,11 +288,11 @@ func TestParseChunkHeader(t *testing.T) {
 	reader = NewMockReadSeeker(&MTrk)
 	header, err = parseChunkHeader(reader)
 
-	if header.chunkType != "MTrk" {
+	if header.ChunkType != "MTrk" {
 		t.Fatal("Got ", header, " expected MTrk")
 	}
 
-	if header.length != 4294967 {
+	if header.Length != 4294967 {
 		t.Fatal("Got ", header, " expected 4294967")
 	}
 
@@ -329,11 +329,11 @@ func TestParseHeaderData(t *testing.T) {
 	// Division: metrical 5
 	var headerMetrical = NewMockReadSeeker(&[]byte{0x00, 0x01, 0x00, 0x02, 0x00, 0x05})
 	expected = HeaderData{
-		format:              1,
-		numTracks:           2,
-		timeFormat:          MetricalTimeFormat,
-		timeFormatData:      0x00,
-		ticksPerQuarterNote: 5}
+		Format:              1,
+		NumTracks:           2,
+		TimeFormat:          MetricalTimeFormat,
+		TimeFormatData:      0x00,
+		TicksPerQuarterNote: 5}
 
 	data, err = parseHeaderData(headerMetrical)
 
@@ -350,11 +350,11 @@ func TestParseHeaderData(t *testing.T) {
 	// Division: timecode (actual data ignored for now)
 	var headerTimecode = NewMockReadSeeker(&[]byte{0x00, 0x02, 0x00, 0x01, 0xFF, 0x05})
 	expected = HeaderData{
-		format:              2,
-		numTracks:           1,
-		timeFormat:          TimeCodeTimeFormat,
-		timeFormatData:      0x7F05, // Removed the top timecode type bit flag.
-		ticksPerQuarterNote: 0}
+		Format:              2,
+		NumTracks:           1,
+		TimeFormat:          TimeCodeTimeFormat,
+		TimeFormatData:      0x7F05, // Removed the top timecode type bit flag.
+		TicksPerQuarterNote: 0}
 
 	data, err = parseHeaderData(headerTimecode)
 

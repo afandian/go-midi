@@ -15,22 +15,22 @@ package midi
 
 // A chunk header
 type ChunkHeader struct {
-	chunkType string
-	length    uint32
+	ChunkType string
+	Length    uint32
 }
 
 // Header data
 type HeaderData struct {
-	format    uint16
-	numTracks uint16
+	Format    uint16
+	NumTracks uint16
 
 	// One of MetricalTimeFormat or TimeCodeTimeFormat
-	timeFormat uint
+	TimeFormat uint
 
 	// Used if TimeCodeTimeFormat
 	// Currently data is not un-packed.
-	timeFormatData uint16
+	TimeFormatData uint16
 
 	// Used if MetricalTimeFormat
-	ticksPerQuarterNote uint16
+	TicksPerQuarterNote uint16
 }
