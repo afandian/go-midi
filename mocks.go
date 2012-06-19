@@ -196,32 +196,42 @@ func (cbk *CountingLexerCallback) SequenceNumber(channel uint8, number uint16, n
 func (cbk *CountingLexerCallback) Text(channel uint8, text string, time uint32) {
 	cbk.text++
 	cbk.textValue = text
+	cbk.time = time
 }
 func (cbk *CountingLexerCallback) CopyrightText(channel uint8, text string, time uint32) {
 	cbk.copyrightText++
 	cbk.textValue = text
+	cbk.time = time
 }
 func (cbk *CountingLexerCallback) SequenceName(channel uint8, text string, time uint32) {
 	cbk.sequenceName++
 	cbk.textValue = text
+	cbk.time = time
 }
 func (cbk *CountingLexerCallback) TrackInstrumentName(channel uint8, text string, time uint32) {
 	cbk.trackInstrumentName++
 	cbk.textValue = text
+	cbk.time = time
 }
 func (cbk *CountingLexerCallback) LyricText(channel uint8, text string, time uint32) {
 	cbk.lyricText++
 	cbk.textValue = text
+	cbk.time = time
 }
 func (cbk *CountingLexerCallback) MarkerText(channel uint8, text string, time uint32) {
-	cbk.lyricText++
+	cbk.markerText++
 	cbk.textValue = text
+	cbk.time = time
 }
 func (cbk *CountingLexerCallback) CuePointText(channel uint8, text string, time uint32) {
 	cbk.cuePointText++
 	cbk.textValue = text
+	cbk.time = time
 }
-func (cbk *CountingLexerCallback) EndOfTrack(channel uint8, time uint32) { cbk.endOfTrack++ }
+func (cbk *CountingLexerCallback) EndOfTrack(channel uint8, time uint32) {
+	cbk.endOfTrack++
+	cbk.time = time
+}
 
 // MockReadSeeker is a mock Reader and Seeker. Constructed with data, behaves as a file reader.
 // This is used to pass MIDI data to the Lexer and also to the MIDI value parsing functions.

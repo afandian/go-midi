@@ -19,7 +19,7 @@ import (
 	"io"
 )
 
-// State of the MidiLexer.
+// State of the MidiLexerCallback.
 const (
 	// At the start of the MIDI file.
 	// Expect SMF Header chunk.
@@ -257,13 +257,15 @@ func (lexer *MidiLexer) next() (finished bool, err error) {
 					// Meta-events
 					case 0xF:
 						{
-							fmt.Println("SystemCommon/RealTime")
 
 							command, err := parseUint8(lexer.input)
 
 							if err != nil {
 								return false, err
 							}
+
+
+							fmt.Println("SystemCommon/RealTime command:", command)
 
 							switch command {
 
@@ -299,8 +301,9 @@ func (lexer *MidiLexer) next() (finished bool, err error) {
 							// Text event
 							case 0x01:
 								{
+									fmt.Println("Text")
 									text, err := parseText(lexer.input)
-
+									fmt.Println("text value", text, err)
 									if err != nil {
 										return false, err
 									}
@@ -313,6 +316,7 @@ func (lexer *MidiLexer) next() (finished bool, err error) {
 							// Copyright text event
 							case 0x02:
 								{
+									fmt.Println("Copyright")
 									text, err := parseText(lexer.input)
 
 									if err != nil {

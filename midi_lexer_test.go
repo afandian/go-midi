@@ -185,7 +185,7 @@ func TestNoteOff(t *testing.T) {
 	lexer = NewMidiLexer(mockReadSeeker, mockLexerCallback)
 
 	// Pre: ExpectChunk
-	// Should be ready for a chunk.
+	// Should be ready for a track event.
 	lexer.state = ExpectTrackEvent
 
 	finished, err = lexer.next()
@@ -215,7 +215,7 @@ func TestNoteOn(t *testing.T) {
 	lexer = NewMidiLexer(mockReadSeeker, mockLexerCallback)
 
 	// Pre: ExpectChunk
-	// Should be ready for a chunk.
+	// Should be ready for a track event.
 	lexer.state = ExpectTrackEvent
 
 	finished, err = lexer.next()
@@ -245,7 +245,7 @@ func TestNotePolyphonicKeyPressure(t *testing.T) {
 	lexer = NewMidiLexer(mockReadSeeker, mockLexerCallback)
 
 	// Pre: ExpectChunk
-	// Should be ready for a chunk.
+	// Should be ready for a track event.
 	lexer.state = ExpectTrackEvent
 
 	finished, err = lexer.next()
@@ -281,7 +281,7 @@ func TestChannelPressure(t *testing.T) {
 	lexer = NewMidiLexer(mockReadSeeker, mockLexerCallback)
 
 	// Pre: ExpectChunk
-	// Should be ready for a chunk.
+	// Should be ready for a track event.
 	lexer.state = ExpectTrackEvent
 
 	finished, err = lexer.next()
@@ -319,7 +319,7 @@ func TestPitchWheel(t *testing.T) {
 	 */
 
 	// Pre: ExpectChunk
-	// Should be ready for a chunk.
+	// Should be ready for a track event.
 	lexer.state = ExpectTrackEvent
 
 	finished, err = lexer.next()
@@ -344,7 +344,7 @@ func TestPitchWheel(t *testing.T) {
 	 */
 
 	// Pre: ExpectChunk
-	// Should be ready for a chunk.
+	// Should be ready for a track event.
 	lexer.state = ExpectTrackEvent
 
 	finished, err = lexer.next()
@@ -369,7 +369,7 @@ func TestPitchWheel(t *testing.T) {
 	 */
 
 	// Pre: ExpectChunk
-	// Should be ready for a chunk.
+	// Should be ready for a track event.
 	lexer.state = ExpectTrackEvent
 
 	finished, err = lexer.next()
@@ -401,7 +401,7 @@ func TestNilSequenceNumber(t *testing.T) {
 	lexer = NewMidiLexer(mockReadSeeker, mockLexerCallback)
 
 	// Pre: ExpectChunk
-	// Should be ready for a chunk.
+	// Should be ready for a track event.
 	lexer.state = ExpectTrackEvent
 
 	finished, err = lexer.next()
@@ -431,7 +431,7 @@ func TestSequenceNumber(t *testing.T) {
 	lexer = NewMidiLexer(mockReadSeeker, mockLexerCallback)
 
 	// Pre: ExpectChunk
-	// Should be ready for a chunk.
+	// Should be ready for a track event.
 	lexer.state = ExpectTrackEvent
 
 	finished, err = lexer.next()
@@ -449,6 +449,223 @@ func TestSequenceNumber(t *testing.T) {
 	assertUint32Equal(mockLexerCallback.time, 0x09, t)
 	assertUint16Equal(mockLexerCallback.sequenceNumberValue, 42949, t)
 	assertTrue(mockLexerCallback.sequenceNumberGiven, t)
+}
+
+// Expect a track event, get Text event.
+// ExpectTrackEvent -> ExpectTrackEvent
+func TestText(t *testing.T) {
+	mockLexerCallback = new(CountingLexerCallback)
+	mockReadSeeker = NewMockReadSeeker(&[]byte{0x09, 0xFF, 0x01, 0x10, 0x6A, 0x6F, 0x65, 0x40, 0x61, 0x66, 0x61, 0x6E, 0x64, 0x69, 0x61, 0x6E, 0x2E, 0x63, 0x6F, 0x6D})
+	lexer = NewMidiLexer(mockReadSeeker, mockLexerCallback)
+
+	// Pre: ExpectChunk
+	// Should be ready for a track event.
+	lexer.state = ExpectTrackEvent
+
+	finished, err = lexer.next()
+	assertNoError(err, t)
+
+	// Post:
+	// not finished yet
+	assertFalse(finished, t)
+
+	// ExpectChunk state.
+	assertIntsEqual(lexer.state, ExpectTrackEvent, t)
+
+	// callback.Text should have been callbacked.
+	assertIntsEqual(mockLexerCallback.text, 1, t)
+	assertUint32Equal(mockLexerCallback.time, 0x09, t)
+	assertStringsEqual(mockLexerCallback.textValue, "joe@afandian.com", t)
+	
+}
+
+// Expect a track event, get CopyrightText event.
+// ExpectTrackEvent -> ExpectTrackEvent
+func TestCopyrightText(t *testing.T) {
+	mockLexerCallback = new(CountingLexerCallback)
+	mockReadSeeker = NewMockReadSeeker(&[]byte{0x09, 0xFF, 0x02, 0x10, 0x6A, 0x6F, 0x65, 0x40, 0x61, 0x66, 0x61, 0x6E, 0x64, 0x69, 0x61, 0x6E, 0x2E, 0x63, 0x6F, 0x6D})
+	lexer = NewMidiLexer(mockReadSeeker, mockLexerCallback)
+
+	// Pre: ExpectChunk
+	// Should be ready for a track event.
+	lexer.state = ExpectTrackEvent
+
+	finished, err = lexer.next()
+	assertNoError(err, t)
+
+	// Post:
+	// not finished yet
+	assertFalse(finished, t)
+
+	// ExpectChunk state.
+	assertIntsEqual(lexer.state, ExpectTrackEvent, t)
+
+	// callback.Text should have been callbacked.
+	assertIntsEqual(mockLexerCallback.copyrightText, 1, t)
+	assertUint32Equal(mockLexerCallback.time, 0x09, t)
+	assertStringsEqual(mockLexerCallback.textValue, "joe@afandian.com", t)
+}
+
+// Expect a track event, get SequenceName event.
+// ExpectTrackEvent -> ExpectTrackEvent
+func TestSequenceName(t *testing.T) {
+	mockLexerCallback = new(CountingLexerCallback)
+	mockReadSeeker = NewMockReadSeeker(&[]byte{0x09, 0xFF, 0x03, 0x10, 0x6A, 0x6F, 0x65, 0x40, 0x61, 0x66, 0x61, 0x6E, 0x64, 0x69, 0x61, 0x6E, 0x2E, 0x63, 0x6F, 0x6D})
+	lexer = NewMidiLexer(mockReadSeeker, mockLexerCallback)
+
+	// Pre: ExpectChunk
+	// Should be ready for a track event.
+	lexer.state = ExpectTrackEvent
+
+	finished, err = lexer.next()
+	assertNoError(err, t)
+
+	// Post:
+	// not finished yet
+	assertFalse(finished, t)
+
+	// ExpectChunk state.
+	assertIntsEqual(lexer.state, ExpectTrackEvent, t)
+
+	// callback.Text should have been callbacked.
+	assertIntsEqual(mockLexerCallback.sequenceName, 1, t)
+	assertUint32Equal(mockLexerCallback.time, 0x09, t)
+	assertStringsEqual(mockLexerCallback.textValue, "joe@afandian.com", t)
+}
+
+// Expect a track event, get TrackInstrumentName event.
+// ExpectTrackEvent -> ExpectTrackEvent
+func TestTrackInstrumentName(t *testing.T) {
+	mockLexerCallback = new(CountingLexerCallback)
+	mockReadSeeker = NewMockReadSeeker(&[]byte{0x09, 0xFF, 0x04, 0x10, 0x6A, 0x6F, 0x65, 0x40, 0x61, 0x66, 0x61, 0x6E, 0x64, 0x69, 0x61, 0x6E, 0x2E, 0x63, 0x6F, 0x6D})
+	lexer = NewMidiLexer(mockReadSeeker, mockLexerCallback)
+
+	// Pre: ExpectChunk
+	// Should be ready for a track event.
+	lexer.state = ExpectTrackEvent
+
+	finished, err = lexer.next()
+	assertNoError(err, t)
+
+	// Post:
+	// not finished yet
+	assertFalse(finished, t)
+
+	// ExpectChunk state.
+	assertIntsEqual(lexer.state, ExpectTrackEvent, t)
+
+	// callback.Text should have been callbacked.
+	assertIntsEqual(mockLexerCallback.trackInstrumentName, 1, t)
+	assertUint32Equal(mockLexerCallback.time, 0x09, t)
+	assertStringsEqual(mockLexerCallback.textValue, "joe@afandian.com", t)
+}
+
+// Expect a track event, get LyricText event.
+// ExpectTrackEvent -> ExpectTrackEvent
+func TestLyricText(t *testing.T) {
+	mockLexerCallback = new(CountingLexerCallback)
+	mockReadSeeker = NewMockReadSeeker(&[]byte{0x09, 0xFF, 0x05, 0x10, 0x6A, 0x6F, 0x65, 0x40, 0x61, 0x66, 0x61, 0x6E, 0x64, 0x69, 0x61, 0x6E, 0x2E, 0x63, 0x6F, 0x6D})
+	lexer = NewMidiLexer(mockReadSeeker, mockLexerCallback)
+
+	// Pre: ExpectChunk
+	// Should be ready for a track event.
+	lexer.state = ExpectTrackEvent
+
+	finished, err = lexer.next()
+	assertNoError(err, t)
+
+	// Post:
+	// not finished yet
+	assertFalse(finished, t)
+
+	// ExpectChunk state.
+	assertIntsEqual(lexer.state, ExpectTrackEvent, t)
+
+	// callback.Text should have been callbacked.
+	assertIntsEqual(mockLexerCallback.lyricText, 1, t)
+	assertUint32Equal(mockLexerCallback.time, 0x09, t)
+	assertStringsEqual(mockLexerCallback.textValue, "joe@afandian.com", t)
+}
+
+// Expect a track event, get MarkerText event.
+// ExpectTrackEvent -> ExpectTrackEvent
+func TestMarkerText(t *testing.T) {
+	mockLexerCallback = new(CountingLexerCallback)
+	mockReadSeeker = NewMockReadSeeker(&[]byte{0x09, 0xFF, 0x06, 0x10, 0x6A, 0x6F, 0x65, 0x40, 0x61, 0x66, 0x61, 0x6E, 0x64, 0x69, 0x61, 0x6E, 0x2E, 0x63, 0x6F, 0x6D})
+	lexer = NewMidiLexer(mockReadSeeker, mockLexerCallback)
+
+	// Pre: ExpectChunk
+	// Should be ready for a track event.
+	lexer.state = ExpectTrackEvent
+
+	finished, err = lexer.next()
+	assertNoError(err, t)
+
+	// Post:
+	// not finished yet
+	assertFalse(finished, t)
+
+	// ExpectChunk state.
+	assertIntsEqual(lexer.state, ExpectTrackEvent, t)
+
+	// callback.Text should have been callbacked.
+	assertIntsEqual(mockLexerCallback.markerText, 1, t)
+	assertUint32Equal(mockLexerCallback.time, 0x09, t)
+	assertStringsEqual(mockLexerCallback.textValue, "joe@afandian.com", t)
+}
+
+// Expect a track event, get CuePointText event.
+// ExpectTrackEvent -> ExpectTrackEvent
+func TestCuePointText(t *testing.T) {
+	mockLexerCallback = new(CountingLexerCallback)
+	mockReadSeeker = NewMockReadSeeker(&[]byte{0x09, 0xFF, 0x07, 0x10, 0x6A, 0x6F, 0x65, 0x40, 0x61, 0x66, 0x61, 0x6E, 0x64, 0x69, 0x61, 0x6E, 0x2E, 0x63, 0x6F, 0x6D})
+	lexer = NewMidiLexer(mockReadSeeker, mockLexerCallback)
+
+	// Pre: ExpectChunk
+	// Should be ready for a track event.
+	lexer.state = ExpectTrackEvent
+
+	finished, err = lexer.next()
+	assertNoError(err, t)
+
+	// Post:
+	// not finished yet
+	assertFalse(finished, t)
+
+	// ExpectChunk state.
+	assertIntsEqual(lexer.state, ExpectTrackEvent, t)
+
+	// callback.Text should have been callbacked.
+	assertIntsEqual(mockLexerCallback.cuePointText, 1, t)
+	assertUint32Equal(mockLexerCallback.time, 0x09, t)
+	assertStringsEqual(mockLexerCallback.textValue, "joe@afandian.com", t)
+}
+
+// Expect a track event, get EndOfTrack event.
+// ExpectTrackEvent -> ExpectChunk
+func TestEndOfTrack(t *testing.T) {
+	mockLexerCallback = new(CountingLexerCallback)
+	mockReadSeeker = NewMockReadSeeker(&[]byte{0x09, 0xFF, 0x2F, 0x00})
+	lexer = NewMidiLexer(mockReadSeeker, mockLexerCallback)
+
+	// Pre: ExpectChunk
+	// Should be ready for a track event.
+	lexer.state = ExpectTrackEvent
+
+	finished, err = lexer.next()
+	assertNoError(err, t)
+
+	// Post:
+	// not finished yet
+	assertFalse(finished, t)
+
+	// ExpectChunk state.
+	// As this ends the track, we go back to ExpectChunk state ready for the next track.
+	assertIntsEqual(lexer.state, ExpectChunk, t)
+
+	// callback.Text should have been callbacked.
+	assertIntsEqual(mockLexerCallback.endOfTrack, 1, t)
+	assertUint32Equal(mockLexerCallback.time, 0x09, t)
 }
 
 /*
