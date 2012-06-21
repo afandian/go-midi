@@ -15,7 +15,7 @@
 package midi
 
 import (
-	// "fmt"
+	"fmt"
 	"io"
 )
 
@@ -87,39 +87,43 @@ func (lexer *MidiLexer) Lex() error {
 // next lexes the next item, calling appropriate callbacks.
 // Finished only set true when finished correctly.
 func (lexer *MidiLexer) next() (finished bool, err error) {
+
+	// Default for return values.
 	err = nil
 	finished = false
 
 	// The position in the file before the next lexing event happens. 
 	// Useful in some cases
-	currentPosition, err := lexer.input.Seek(0, 1)
+	var currentPosition int64
+	currentPosition, err = lexer.input.Seek(0, 1)
 
 	if err != nil {
 		return
 	}
 
-	//fmt.Println("*** Next. State:", lexer.state, "position:", currentPosition)
+	fmt.Println("*** Next. State:", lexer.state, "position:", currentPosition)
 
 	// See comments for state values above.
 	switch lexer.state {
 	case ExpectHeader:
 		{
-			//fmt.Println("ExpectHeader")
+			fmt.Println("ExpectHeader")
 
 			var chunkHeader ChunkHeader
 			chunkHeader, err = parseChunkHeader(lexer.input)
 			if chunkHeader.ChunkType != "MThd" {
 				err = ExpectedMthd
 
-				//fmt.Println("ChunkHeader error ", err)
+				fmt.Println("ChunkHeader error ", err)
 				return
 			}
 
-			var header, err = parseHeaderData(lexer.input)
+			var header HeaderData
+			header, err = parseHeaderData(lexer.input)
 
 			if err != nil {
-				//fmt.Println("HeaderData error ", err)
-				return false, err
+				fmt.Println("HeaderData error ", err)
+				return
 			}
 
 			lexer.callback.Began()
@@ -128,16 +132,17 @@ func (lexer *MidiLexer) next() (finished bool, err error) {
 
 			lexer.state = ExpectChunk
 
-			return false, nil
+			return
 		}
 
 	case ExpectChunk:
 		{
-			//fmt.Println("ExpectChunk")
+			fmt.Println("ExpectChunk")
 
-			var chunkHeader, err = parseChunkHeader(lexer.input)
+			var chunkHeader ChunkHeader
+			chunkHeader, err = parseChunkHeader(lexer.input)
 
-			//fmt.Println("Got chunk header", chunkHeader)
+			fmt.Println("Got chunk header", chunkHeader)
 
 			if err != nil {
 				// If we expect a chunk and we hit the end of the file, that's not so unexpected after all.
@@ -145,11 +150,13 @@ func (lexer *MidiLexer) next() (finished bool, err error) {
 				if err == UnexpectedEndOfFile {
 					lexer.state = Done
 
-					return true, nil
+					finished = true
+					err = nil
+					return
 				}
 
-				//fmt.Println("Chunk header error ", err)
-				return false, err
+				fmt.Println("Chunk header error ", err)
+				return
 			}
 
 			lexer.callback.Track(chunkHeader)
@@ -167,12 +174,12 @@ func (lexer *MidiLexer) next() (finished bool, err error) {
 				lexer.state = ExpectTrackEvent
 			}
 
-			return false, nil
+			return
 		}
 
 	case ExpectTrackEvent:
 		{
-			//fmt.Println("ExpectTrackEvent")
+			fmt.Println("ExpectTrackEvent")
 
 			// Removed because there is an event to say 'end of chunk'.
 			// TODO: investigate. Could put this back for error cases.
@@ -184,32 +191,35 @@ func (lexer *MidiLexer) next() (finished bool, err error) {
 			// 		lexer.state = ExpectChunk
 			// 		return false, nil
 			// 	} else if currentPosition > lexer.nextChunkHeader {
-			// 		//fmt.Println("Chunk end error ", err)
+			// 		fmt.Println("Chunk end error ", err)
 			// 		return false, BadSizeChunk
 			// 	}
 			// }
 
 			// Time Delta
-			time, err := parseVarLength(lexer.input)
+			var time uint32
+			time, err = parseVarLength(lexer.input)
 			if err != nil {
-				//fmt.Println("Time delta error ", err)
-				return false, err
+				fmt.Println("Time delta error ", err)
+				return
 			}
 
 			// Message type, Message Channel
-			mType, channel, err := readStatusByte(lexer.input)
+			var mType, channel uint8
+			mType, channel, err = readStatusByte(lexer.input)
 
-			//fmt.Println("Track Event Type ", mType)
+			fmt.Println("Track Event Type ", mType)
 
 			switch mType {
 			// NoteOff
 			case 0x8:
 				{
-					pitch, velocity, err := parseTwoUint7(lexer.input)
+					var pitch, velocity uint8
+					pitch, velocity, err = parseTwoUint7(lexer.input)
 
 					if err != nil {
-						//fmt.Println("NoteOff error ", err)
-						return false, err
+						fmt.Println("NoteOff error ", err)
+						return
 					}
 
 					lexer.callback.NoteOff(channel, pitch, velocity, time)
@@ -218,11 +228,12 @@ func (lexer *MidiLexer) next() (finished bool, err error) {
 			// NoteOn
 			case 0x9:
 				{
-					pitch, velocity, err := parseTwoUint7(lexer.input)
+					var pitch, velocity uint8
+					pitch, velocity, err = parseTwoUint7(lexer.input)
 
 					if err != nil {
-						//fmt.Println("NoteOn error ", err)
-						return false, err
+						fmt.Println("NoteOn error ", err)
+						return
 					}
 
 					lexer.callback.NoteOn(channel, pitch, velocity, time)
@@ -231,10 +242,11 @@ func (lexer *MidiLexer) next() (finished bool, err error) {
 			// Polyphonic Key Pressure
 			case 0xA:
 				{
-					pitch, pressure, err := parseTwoUint7(lexer.input)
+					var pitch, pressure uint8
+					pitch, pressure, err = parseTwoUint7(lexer.input)
 
 					if err != nil {
-						return false, err
+						return
 					}
 
 					lexer.callback.PolyphonicAfterTouch(channel, pitch, pressure, time)
@@ -243,10 +255,11 @@ func (lexer *MidiLexer) next() (finished bool, err error) {
 			// Control Change or Channel Mode Message
 			case 0xB:
 				{
-					controller, value, err := parseTwoUint7(lexer.input)
+					var controller, value uint8
+					controller, value, err = parseTwoUint7(lexer.input)
 
 					if err != nil {
-						return false, err
+						return
 					}
 
 					// TODO split this into ChannelMode for values [120, 127]?
@@ -259,29 +272,31 @@ func (lexer *MidiLexer) next() (finished bool, err error) {
 
 					// TODO TEST
 					lexer.callback.ControlChange(channel, controller, value, time)
-					return false, nil
+					return
 				}
 
 			// Program Change
 			case 0xC:
 				{
-					program, err := parseUint7(lexer.input)
+					var program uint8
+					program, err = parseUint7(lexer.input)
 
 					if err != nil {
-						return false, err
+						return
 					}
 
 					lexer.callback.ProgramChange(channel, program, time)
-					return false, nil
+					return
 				}
 
 			// Channel Pressure
 			case 0xD:
 				{
-					value, err := parseUint7(lexer.input)
+					var value uint8
+					value, err = parseUint7(lexer.input)
 
 					if err != nil {
-						return false, err
+						return
 					}
 
 					lexer.callback.ChannelAfterTouch(channel, value, time)
@@ -291,10 +306,12 @@ func (lexer *MidiLexer) next() (finished bool, err error) {
 			case 0xE:
 				{
 					// The value is a signed int (relative to centre), and absoluteValue is the actual value in the file.
-					value, absoluteValue, err := parsePitchWheelValue(lexer.input)
+					var value int16
+					var absoluteValue uint16
+					value, absoluteValue, err = parsePitchWheelValue(lexer.input)
 
 					if err != nil {
-						return false, err
+						return
 					}
 
 					lexer.callback.PitchWheel(channel, value, absoluteValue, time)
@@ -308,14 +325,14 @@ func (lexer *MidiLexer) next() (finished bool, err error) {
 					// Meta-events
 					case 0xF:
 						{
-
-							command, err := parseUint8(lexer.input)
+							var command uint8
+							command, err = parseUint8(lexer.input)
 
 							if err != nil {
-								return false, err
+								return
 							}
 
-							//fmt.Println("SystemCommon/RealTime command:", command)
+							fmt.Println("SystemCommon/RealTime command:", command)
 
 							// TODO: If every one of these takes a length, then take this outside.
 							// Will make for more more robust unknown types.
@@ -324,148 +341,157 @@ func (lexer *MidiLexer) next() (finished bool, err error) {
 							// Sequence number
 							case 0x00:
 								{
-									//fmt.Println("seq no")
-									length, err := parseUint8(lexer.input)
+									fmt.Println("seq no")
+									var length uint8
+									length, err = parseUint8(lexer.input)
 
 									if err != nil {
-										return false, err
+										return
 									}
 
 									// Zero length sequences allowed according to http://home.roadrunner.com/~jgglatt/tech/midifile/seq.htm
 									if length == 0 {
 										lexer.callback.SequenceNumber(channel, 0, false, time)
 
-										return false, nil
+										return
 									}
 
 									// Otherwise length will be 2 to hold the uint16.
-									sequenceNumber, err := parseUint16(lexer.input)
+									var sequenceNumber uint16
+									sequenceNumber, err = parseUint16(lexer.input)
 
 									if err != nil {
-										return false, err
+										return
 									}
 
 									lexer.callback.SequenceNumber(channel, sequenceNumber, true, time)
 
-									return false, nil
+									return
 								}
 
 							// Text event
 							case 0x01:
 								{
-									//fmt.Println("Text")
-									text, err := parseText(lexer.input)
-									//fmt.Println("text value", text, err)
+									fmt.Println("Text")
+									var text string
+									text, err = parseText(lexer.input)
+									fmt.Println("text value", text, err)
 									if err != nil {
-										return false, err
+										return
 									}
 
 									lexer.callback.Text(channel, text, time)
 
-									return false, nil
+									return
 								}
 
 							// Copyright text event
 							case 0x02:
 								{
-									//fmt.Println("Copyright")
-									text, err := parseText(lexer.input)
+									fmt.Println("Copyright")
+									var text string
+									text, err = parseText(lexer.input)
 
 									if err != nil {
-										return false, err
+										return
 									}
 
 									lexer.callback.CopyrightText(channel, text, time)
 
-									return false, nil
+									return
 								}
 
 							// Sequence or track name
 							case 0x03:
 								{
-									text, err := parseText(lexer.input)
+									var text string
+									text, err = parseText(lexer.input)
 
 									if err != nil {
-										return false, err
+										return
 									}
 
 									lexer.callback.SequenceName(channel, text, time)
 
-									return false, nil
+									return
 
 								}
 
 							// Track instrument name
 							case 0x04:
 								{
-									text, err := parseText(lexer.input)
+									var text string
+									text, err = parseText(lexer.input)
 
 									if err != nil {
-										return false, err
+										return
 									}
 
 									lexer.callback.TrackInstrumentName(channel, text, time)
 
-									return false, nil
+									return
 
 								}
 
 							// Lyric text
 							case 0x05:
 								{
-									text, err := parseText(lexer.input)
+									var text string
+									text, err = parseText(lexer.input)
 
 									if err != nil {
-										return false, err
+										return
 									}
 
 									lexer.callback.LyricText(channel, text, time)
 
-									return false, nil
-
+									return
 								}
 
 							// Marker text
 							case 0x06:
 								{
-									text, err := parseText(lexer.input)
+									var text string
+									text, err = parseText(lexer.input)
 
 									if err != nil {
-										return false, err
+										return
 									}
 
 									lexer.callback.MarkerText(channel, text, time)
 
-									return false, nil
+									return
 								}
 
 							// Cue point text	
 							case 0x07:
 								{
-									text, err := parseText(lexer.input)
+									var text string
+									text, err = parseText(lexer.input)
 
 									if err != nil {
-										return false, err
+										return
 									}
 
 									lexer.callback.CuePointText(channel, text, time)
 
-									return false, nil
+									return
 								}
 
 							case 0x20:
 								{
 									// Obsolete 'MIDI Channel'
-									//fmt.Println("MIDI Channel obsolete")
-
-									length, err := parseVarLength(lexer.input)
+									fmt.Println("MIDI Channel obsolete")
+									var length uint32
+									length, err = parseVarLength(lexer.input)
 
 									if err != nil {
-										return false, err
+										return
 									}
 
 									if length != 1 {
-										return false, UnexpectedEventLengthError{"Midi Channel Event expected length 1"}
+										err = UnexpectedEventLengthError{"Midi Channel Event expected length 1"}
+										return
 									}
 
 									// This is the channel value.
@@ -473,23 +499,24 @@ func (lexer *MidiLexer) next() (finished bool, err error) {
 									_, err = parseUint8(lexer.input)
 
 									if err != nil {
-										return false, err
+										return
 									}
 								}
 
 							case 0x21:
 								{
 									// Obsolete 'MIDI Port'
-									//fmt.Println("MIDI PORT obsolete")
-
-									length, err := parseVarLength(lexer.input)
+									fmt.Println("MIDI PORT obsolete")
+									var length uint32
+									length, err = parseVarLength(lexer.input)
 
 									if err != nil {
-										return false, err
+										return
 									}
 
 									if length != 1 {
-										return false, UnexpectedEventLengthError{"MIDI Port Event expected length 1"}
+										err = UnexpectedEventLengthError{"MIDI Port Event expected length 1"}
+										return
 									}
 
 									// This is the port value.
@@ -497,24 +524,26 @@ func (lexer *MidiLexer) next() (finished bool, err error) {
 									_, err = parseUint8(lexer.input)
 
 									if err != nil {
-										return false, err
+										return
 									}
 								}
 
 							// End of track
 							case 0x2F:
 								{
-									lexer.callback.EndOfTrack(channel, time)
-
-									length, err := parseVarLength(lexer.input)
+									var length uint32
+									length, err = parseVarLength(lexer.input)
 
 									if err != nil {
-										return false, err
+										return
 									}
 
 									if length != 0 {
-										return false, UnexpectedEventLengthError{"EndOfTrack expected length 0"}
+										err = UnexpectedEventLengthError{"EndOfTrack expected length 0"}
+										return
 									}
+
+									lexer.callback.EndOfTrack(channel, time)
 
 									// Expect the next chunk event.
 									lexer.state = ExpectChunk
@@ -527,24 +556,28 @@ func (lexer *MidiLexer) next() (finished bool, err error) {
 								{
 									// TODO TEST
 
-									length, err := parseVarLength(lexer.input)
+									var length uint32
+									length, err = parseVarLength(lexer.input)
 
 									if err != nil {
-										return false, err
+										return
 									}
 
 									if length != 3 {
-										return false, UnexpectedEventLengthError{"Tempo expected length 3"}
+										err = UnexpectedEventLengthError{"Tempo expected length 3"}
+										return
 									}
 
-									microsecondsPerCrotchet, err := parseUint24(lexer.input)
+									var microsecondsPerCrotchet uint32
+									microsecondsPerCrotchet, err = parseUint24(lexer.input)
 
 									if err != nil {
-										return false, err
+										return
 									}
 
 									// Also beats per minute
-									bpm := 60000000 / microsecondsPerCrotchet
+									var bpm uint32
+									bpm = 60000000 / microsecondsPerCrotchet
 
 									lexer.callback.Tempo(bpm, microsecondsPerCrotchet, time)
 								}
@@ -552,42 +585,48 @@ func (lexer *MidiLexer) next() (finished bool, err error) {
 							// Time signature
 							case 0x58:
 								{
-									length, err := parseVarLength(lexer.input)
+									var length uint32
+									length, err = parseVarLength(lexer.input)
 
 									if err != nil {
-										return false, err
+										return
 									}
 
 									if length != 4 {
-										return false, UnexpectedEventLengthError{"TimeSignature expected length 4"}
+										err = UnexpectedEventLengthError{"TimeSignature expected length 4"}
+										return
 									}
 
 									// TODO TEST
-									numerator, err := parseUint8(lexer.input)
+									var numerator uint8
+									numerator, err = parseUint8(lexer.input)
 
 									if err != nil {
-										return false, err
+										return
 									}
 
-									denomenator, err := parseUint8(lexer.input)
+									var denomenator uint8
+									denomenator, err = parseUint8(lexer.input)
 
 									if err != nil {
-										return false, err
+										return
 									}
 
-									clocksPerClick, err := parseUint8(lexer.input)
+									var clocksPerClick uint8
+									clocksPerClick, err = parseUint8(lexer.input)
 
 									if err != nil {
-										return false, err
+										return
 									}
 
-									demiSemiQuaverPerQuarter, err := parseUint8(lexer.input)
+									var demiSemiQuaverPerQuarter uint8
+									demiSemiQuaverPerQuarter, err = parseUint8(lexer.input)
 
 									if err != nil {
-										return false, err
+										return
 									}
 
-									//fmt.Println("TimeSignature event", numerator, denomenator, clocksPerClick, demiSemiQuaverPerQuarter, time)
+									fmt.Println("TimeSignature event", numerator, denomenator, clocksPerClick, demiSemiQuaverPerQuarter, time)
 
 									lexer.callback.TimeSignature(numerator, denomenator, clocksPerClick, demiSemiQuaverPerQuarter, time)
 
@@ -598,15 +637,17 @@ func (lexer *MidiLexer) next() (finished bool, err error) {
 							case 0x59:
 								{
 									// TODO TEST
-									//fmt.Println("Key Signature event TOOD")
-									length, err := parseVarLength(lexer.input)
+									fmt.Println("Key Signature event TOOD")
+									var length uint32
+									length, err = parseVarLength(lexer.input)
 
 									if err != nil {
-										return false, err
+										return
 									}
 
 									if length != 2 {
-										return false, UnexpectedEventLengthError{"KeySignature expected length 2"}
+										err = UnexpectedEventLengthError{"KeySignature expected length 2"}
+										return
 									}
 
 									// TODO sharps is signed int
@@ -614,13 +655,13 @@ func (lexer *MidiLexer) next() (finished bool, err error) {
 									_, err = parseUint8(lexer.input) // sharps
 
 									if err != nil {
-										return false, err
+										return
 									}
 
 									_, err = parseUint8(lexer.input) // flats
 
 									if err != nil {
-										return false, err
+										return
 									}
 
 								}
@@ -628,38 +669,40 @@ func (lexer *MidiLexer) next() (finished bool, err error) {
 							// Sequencer specific info
 							case 0x7F:
 								{
-									//fmt.Println("0x7F")
+									fmt.Println("0x7F")
 								}
 
 							// Timing clock
 							case 0xF8:
 								{
-									//fmt.Println("0xF8")
+									fmt.Println("0xF8")
 								}
 
 							// Start current sequence
 							case 0xFA:
 								{
-									//fmt.Println("0xFA")
+									fmt.Println("0xFA")
 								}
 
 							// Continue stopped sequence where left off
 							case 0xFB:
 								{
-									//fmt.Println("0xFB")
+									fmt.Println("0xFB")
 								}
 
 							// Stop sequence
 							case 0xFc:
 								{
-									//fmt.Println("0xFc")
+									fmt.Println("0xFc")
 								}
-							default: //fmt.Println("Unrecognised meta command", command)
+							default:
+								fmt.Println("Unrecognised meta command", command)
 							}
 
 						}
 
-					default: //fmt.Println("Unrecognised message type", mType)
+					default:
+						fmt.Println("Unrecognised message type", mType)
 					}
 
 					// 	
@@ -670,20 +713,21 @@ func (lexer *MidiLexer) next() (finished bool, err error) {
 			// Now we need to see if we're at the end of a Track Data chunk.
 			default:
 				{
-					length, err := parseVarLength(lexer.input)
+					var length uint32
+					length, err = parseVarLength(lexer.input)
 
 					if err != nil {
-						return false, err
+						return
 					}
 
-					//fmt.Println("Type Unrecognised", mType, "length", length)
+					fmt.Println("Type Unrecognised", mType, "length", length)
 
 					// Read length of chunk
 					for i := uint32(0); i < length; i++ {
 						_, err = parseUint8(lexer.input)
 
 						if err != nil {
-							return false, err
+							return
 						}
 					}
 				}
@@ -695,7 +739,8 @@ func (lexer *MidiLexer) next() (finished bool, err error) {
 		{
 			// The event that raised this will already have returned false to say it's stopped ticking.
 			// Just keep returning false.
-			return false, nil
+			finished = true
+			return
 		}
 	}
 
