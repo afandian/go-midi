@@ -56,6 +56,7 @@ type MidiLexerCallback interface {
 	Continue(time uint32)
 	Stop(time uint32)
 	Undefined4(time uint32)
+	Tempo(bpm uint32, microsecondsPerCrotchet uint32, time uint32)
 	ActiveSensing(time uint32)
 	Reset(time uint32)
 	Done(time uint32)
@@ -71,4 +72,5 @@ type MidiLexerCallback interface {
 	MarkerText(channel uint8, text string, time uint32)
 	CuePointText(channel uint8, text string, time uint32)
 	EndOfTrack(channel uint8, time uint32)
+	TimeSignature(numerator uint8, denomenator uint8, clocksPerClick uint8, demiSemiQuaverPerQuarter uint8, time uint32)
 }

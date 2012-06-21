@@ -31,30 +31,6 @@ func setupData(data *[]byte) {
 	mockReadSeeker = NewMockReadSeeker(data)
 }
 
-// MidiLexer should throw error for null callback or input
-func TestLexerShouldComplainNullArgs(t *testing.T) {
-	setupData(&[]byte{})
-
-	var status int
-
-	// First call with good arguments.
-	lexer = NewMidiLexer(mockReadSeeker, mockLexerCallback)
-	status = lexer.Lex()
-	if status != Ok {
-		t.Fatal("Status should be OK")
-	}
-
-	// Call with no reader
-	lexer = NewMidiLexer(nil, mockLexerCallback)
-	status = lexer.Lex()
-	assertHasFlag(status, NoReadSeeker, t)
-
-	// Call with no callback
-	lexer = NewMidiLexer(mockReadSeeker, nil)
-	status = lexer.Lex()
-	assertHasFlag(status, NoCallback, t)
-}
-
 /*
  * Correct state transitions. 
  */
@@ -130,6 +106,32 @@ func TestMidiLexerShouldSkipUnknownTrack(t *testing.T) {
 	var position, err = lexer.input.Seek(0, 1)
 	assertNoError(err, t)
 	assertIntsEqual(int(position), 10, t)
+}
+
+// Expect a chunk, get an end of file. Should end gracefully.
+// ExpectChunk -> Done
+func TestMidiLexerShouldReachEndOfFile(t *testing.T) {
+	// Just enough for the header chunk
+
+	mockLexerCallback = new(CountingLexerCallback)
+
+	mockReadSeeker = NewMockReadSeeker(&[]byte{})
+
+	lexer = NewMidiLexer(mockReadSeeker, mockLexerCallback)
+
+	// Pre: ExpectChunk
+	// Should be ready for a chunk.
+	lexer.state = ExpectChunk
+
+	finished, err = lexer.next()
+	assertNoError(err, t)
+
+	// Post:
+	// finished 
+	assertTrue(finished, t)
+
+	// ExpectChunk state.
+	assertIntsEqual(lexer.state, Done, t)
 }
 
 // Expect a chunk, get MTrk. Should enter ExpectTrackEvent state.
@@ -476,7 +478,7 @@ func TestText(t *testing.T) {
 	assertIntsEqual(mockLexerCallback.text, 1, t)
 	assertUint32Equal(mockLexerCallback.time, 0x09, t)
 	assertStringsEqual(mockLexerCallback.textValue, "joe@afandian.com", t)
-	
+
 }
 
 // Expect a track event, get CopyrightText event.

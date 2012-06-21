@@ -36,6 +36,7 @@ func (*MockLexerCallback) ProgramChange(channel uint8, program uint8, time uint3
 func (*MockLexerCallback) ChannelAfterTouch(channel uint8, value uint8, time uint32)               {}
 func (*MockLexerCallback) PitchWheel(channel uint8, value int16, absValue uint16, time uint32)     {}
 func (*MockLexerCallback) TimeCodeQuarter(messageType uint8, values uint8, time uint32)            {}
+func (*MockLexerCallback) Tempo(bpm uint32, microsecondsPerCrotchet uint32, time uint32)           {}
 func (*MockLexerCallback) SongPositionPointer(beats uint16, time uint32)                           {}
 func (*MockLexerCallback) SongSelect(song uint8, time uint32)                                      {}
 func (*MockLexerCallback) Undefined1(time uint32)                                                  {}
@@ -61,6 +62,8 @@ func (*MockLexerCallback) LyricText(channel uint8, text string, time uint32)    
 func (*MockLexerCallback) MarkerText(channel uint8, text string, time uint32)          {}
 func (*MockLexerCallback) CuePointText(channel uint8, text string, time uint32)        {}
 func (*MockLexerCallback) EndOfTrack(channel uint8, time uint32)                       {}
+func (*MockLexerCallback) TimeSignature(numerator uint8, denomenator uint8, clocksPerClick uint8, demiSemiQuaverPerQuarter uint8, time uint32) {
+}
 
 // A mock implementation of LexerCallback that counts each method call and stores the most recent values,
 // so that calls can be verified.
@@ -104,6 +107,7 @@ type CountingLexerCallback struct {
 	markerText           int
 	cuePointText         int
 	sequenceNumber       int
+	tempo                int
 
 	// Most recent values
 	headerData  HeaderData
@@ -119,6 +123,17 @@ type CountingLexerCallback struct {
 	pitchWheelValueAbsolute uint16
 	sequenceNumberGiven     bool
 	sequenceNumberValue     uint16
+
+	// Time sig args
+	numerator                uint8
+	denomenator              uint8
+	clocksPerClick           uint8
+	demiSemiQuaverPerQuarter uint8
+
+	// Tempo
+
+	microsecondsPerCrotchet uint32
+	bpm                     uint32
 }
 
 func (cbk *CountingLexerCallback) Header(header HeaderData) { cbk.header++; cbk.headerData = header }
@@ -148,6 +163,15 @@ func (cbk *CountingLexerCallback) PolyphonicAfterTouch(channel uint8, pitch uint
 	cbk.pressure = pressure
 	cbk.time = time
 }
+
+func (cbk *CountingLexerCallback) Tempo(bpm uint32, microsecondsPerCrotchet uint32, time uint32) {
+	// TODO USE
+	cbk.tempo++
+	cbk.microsecondsPerCrotchet = microsecondsPerCrotchet
+	cbk.bpm = bpm
+	cbk.time = time
+}
+
 func (cbk *CountingLexerCallback) ControlChange(channel uint8, controller uint8, value uint8, time uint32) {
 	cbk.controlChange++
 }
@@ -230,6 +254,13 @@ func (cbk *CountingLexerCallback) CuePointText(channel uint8, text string, time 
 }
 func (cbk *CountingLexerCallback) EndOfTrack(channel uint8, time uint32) {
 	cbk.endOfTrack++
+	cbk.time = time
+}
+func (cbk *CountingLexerCallback) TimeSignature(numerator uint8, denomenator uint8, clocksPerClick uint8, demiSemiQuaverPerQuarter uint8, time uint32) {
+	cbk.numerator = numerator
+	cbk.denomenator = denomenator
+	cbk.clocksPerClick = clocksPerClick
+	cbk.demiSemiQuaverPerQuarter = demiSemiQuaverPerQuarter
 	cbk.time = time
 }
 

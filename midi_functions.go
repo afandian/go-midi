@@ -14,7 +14,7 @@
 package midi
 
 import (
-	"fmt"
+	// "fmt"
 	"io"
 )
 
@@ -39,6 +39,31 @@ func parseUint32(reader io.ReadSeeker) (uint32, error) {
 	value |= uint32(buffer[2]) << 8
 	value |= uint32(buffer[1]) << 16
 	value |= uint32(buffer[0]) << 24
+
+	return value, nil
+}
+
+// parseUint24 parse a 3-byte 24 bit integer from a ReadSeeker.
+// It returns the 32-bit value and an error.
+// TODO TEST
+func parseUint24(reader io.ReadSeeker) (uint32, error) {
+	var buffer []byte = make([]byte, 3)
+	num, err := reader.Read(buffer)
+
+	// If we couldn't read 3 bytes, that's a problem.
+	if num != 3 {
+		return 0, UnexpectedEndOfFile
+	}
+
+	// If there was some other problem, that's also a problem.
+	if err != nil {
+		return 0, err
+	}
+
+	var value uint32 = 0x00
+	value |= uint32(buffer[2]) << 0
+	value |= uint32(buffer[1]) << 8
+	value |= uint32(buffer[0]) << 16
 
 	return value, nil
 }
@@ -150,7 +175,7 @@ func parsePitchWheelValue(reader io.ReadSeeker) (relative int16, absolute uint16
 
 	val = uint16((buffer[1])&0x7f) << 7
 	val |= uint16(buffer[0]) & 0x7f
-	fmt.Println(val)
+	// fmt.Println(val)
 
 	// log.Println()
 	// Turn into a signed value relative to the centre.
@@ -193,10 +218,14 @@ func parseVarLength(reader io.ReadSeeker) (uint32, error) {
 // parseChunkHeader parses a chunk header from a ReadSeeker.
 // It returns the ChunkHeader struct as a value and an error.
 func parseChunkHeader(reader io.ReadSeeker) (ChunkHeader, error) {
+	// fmt.Println("Parse Chunk Header")
+
 	var chunk ChunkHeader
 
 	var chunkTypeBuffer []byte = make([]byte, 4)
 	num, err := reader.Read(chunkTypeBuffer)
+
+	// fmt.Println("Buffer type", chunkTypeBuffer, "num", num)
 
 	// If we couldn't read 4 bytes, that's a problem.
 	if num != 4 {

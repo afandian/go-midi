@@ -14,14 +14,31 @@
 
 package midi
 
-// Error codes for Lexer
-const (
-	Ok           = 0x01
-	NoCallback   = 0x01 << 1
-	NoReadSeeker = 0x01 << 2
-)
-
 // A load of Errors and single values for convenience.
+
+type UnexpectedEventLengthError struct {
+	message string
+}
+
+func (e UnexpectedEventLengthError) Error() string {
+	return e.message
+}
+
+type NoCallbackError struct{}
+
+func (e NoCallbackError) Error() string {
+	return "No callback supplied"
+}
+
+var NoCallback = NoCallbackError{}
+
+type NoReadSeekerError struct{}
+
+func (e NoReadSeekerError) Error() string {
+	return "No ReadSeeker input supplied"
+}
+
+var NoReadSeeker = NoReadSeekerError{}
 
 type VarLengthNotFoundError struct{}
 
