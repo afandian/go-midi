@@ -112,8 +112,8 @@ func (cbk LoggingLexerCallback) TimeSignature(numerator uint8, denomenator uint8
 func main() {
 	fmt.Println("Logging Midi")
 	var callback LoggingLexerCallback
-	var file, err = os.Open("/Users/joe/Downloads/102891.mid")
-	// var file, err = os.Open("/Users/joe/Downloads/HOTELCAL.MID")
+	// var file, err = os.Open("/Users/joe/Downloads/102891.mid")
+	var file, err = os.Open("/Users/joe/Downloads/HOTELCAL.MID")
 	if err != nil {
 		fmt.Println(err)
 		return

@@ -59,6 +59,8 @@ type MidiLexerCallback interface {
 	Tempo(bpm uint32, microsecondsPerCrotchet uint32, time uint32)
 	ActiveSensing(time uint32)
 	Reset(time uint32)
+
+	// TODO remove, duplicated by Finished()
 	Done(time uint32)
 
 	// Meta Events
