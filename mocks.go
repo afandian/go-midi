@@ -64,6 +64,9 @@ func (*MockLexerCallback) CuePointText(channel uint8, text string, time uint32) 
 func (*MockLexerCallback) EndOfTrack(channel uint8, time uint32)                       {}
 func (*MockLexerCallback) TimeSignature(numerator uint8, denomenator uint8, clocksPerClick uint8, demiSemiQuaverPerQuarter uint8, time uint32) {
 }
+func (*MockLexerCallback) KeySignature(key ScaleDegree, mode KeySignatureMode, sharpsOrFlats int8) {
+
+}
 
 // A mock implementation of LexerCallback that counts each method call and stores the most recent values,
 // so that calls can be verified.
@@ -264,6 +267,10 @@ func (cbk *CountingLexerCallback) TimeSignature(numerator uint8, denomenator uin
 	cbk.time = time
 }
 
+func (*CountingLexerCallback) KeySignature(key ScaleDegree, mode KeySignatureMode, sharpsOrFlats int8) {
+	// TODO fill out when tests written.
+}
+
 // MockReadSeeker is a mock Reader and Seeker. Constructed with data, behaves as a file reader.
 // This is used to pass MIDI data to the Lexer and also to the MIDI value parsing functions.
 type MockReadSeeker struct {
@@ -291,7 +298,7 @@ func (reader *MockReadSeeker) Read(p []byte) (n int, err error) {
 	return int(amount), nil
 }
 
-// Seek sets the offset for the next Read or Write to offset, interpreted according to the value of `whence`: 
+// Seek sets the offset for the next Read or Write to offset, interpreted according to the value of `whence`:
 // 0 means relative to the origin of the file, 1 means relative to the current offset, and 2 means relative to the end.
 // Seek returns the new offset and an Error, if any.
 func (reader *MockReadSeeker) Seek(offset int64, whence int) (ret int64, err error) {

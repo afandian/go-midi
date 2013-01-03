@@ -108,6 +108,9 @@ func (cbk LoggingLexerCallback) EndOfTrack(channel uint8, time uint32) {
 func (cbk LoggingLexerCallback) TimeSignature(numerator uint8, denomenator uint8, clocksPerClick uint8, demiSemiQuaverPerQuarter uint8, time uint32) {
 	fmt.Println("TimeSignature", numerator, denomenator, clocksPerClick, demiSemiQuaverPerQuarter, time)
 }
+func (cbk LoggingLexerCallback) KeySignature(key midi.ScaleDegree, mode midi.KeySignatureMode, sharpsOrFlats int8) {
+	fmt.Println("KeySignature", key, mode, sharpsOrFlats)
+}
 
 func main() {
 	fmt.Println("Logging Midi")

@@ -67,6 +67,9 @@ type MidiLexerCallback interface {
 
 	SequenceNumber(channel uint8, number uint16, numberGiven bool, time uint32)
 	Text(channel uint8, text string, time uint32)
+
+	// The Key and Mode. Also the sharps (>0) or flats (<0) as per MIDI spec, in case you want to use it.
+	KeySignature(key ScaleDegree, mode KeySignatureMode, sharpsOrFlats int8)
 	CopyrightText(channel uint8, text string, time uint32)
 	SequenceName(channel uint8, text string, time uint32)
 	TrackInstrumentName(channel uint8, text string, time uint32)

@@ -152,6 +152,26 @@ func parseUint8(reader io.ReadSeeker) (uint8, error) {
 	return uint8(buffer[0]), nil
 }
 
+// parseInt8 parses an 8-bit bit  signedinteger stored in a bytes from a ReadSeeker.
+// It returns a single int8.
+func parseInt8(reader io.ReadSeeker) (int8, error) {
+
+	var buffer []byte = make([]byte, 1)
+	num, err := reader.Read(buffer)
+
+	// If we couldn't read 1 bytes, that's a problem.
+	if num != 1 {
+		return 0, UnexpectedEndOfFile
+	}
+
+	// If there was some other problem, that's also a problem.
+	if err != nil {
+		return 0, err
+	}
+
+	return int8(buffer[0]), nil
+}
+
 // parsePitchWheelValue parses a 14-bit signed value, which becomes a signed int16.
 // The least significant 7 bits are stored in the first byte, the 7 most significant bites are stored in the second.
 // Return the signed value relative to the centre, and the absolute value.
@@ -277,12 +297,12 @@ func parseHeaderData(reader io.ReadSeeker) (HeaderData, error) {
 	division, err = parseUint16(reader)
 
 	// "If bit 15 of <division> is zero, the bits 14 thru 0 represent the number
-	// of delta time "ticks" which make up a quarter-note." 
+	// of delta time "ticks" which make up a quarter-note."
 	if division&0x8000 == 0x0000 {
 		headerData.TicksPerQuarterNote = division & 0x7FFF
 		headerData.TimeFormat = MetricalTimeFormat
 	} else {
-		// TODO: Can't be bothered to implement this bit just now. 
+		// TODO: Can't be bothered to implement this bit just now.
 		// If you want it, write it!
 		headerData.TimeFormatData = division & 0x7FFF
 		headerData.TimeFormat = TimeCodeTimeFormat

@@ -15,7 +15,6 @@
 package midi
 
 import (
-	// "fmt"
 	"io"
 )
 
@@ -37,7 +36,7 @@ const (
 )
 
 // MidiLexer is a Standard Midi File Lexer.
-// Pass this a ReadSeeker to a MIDI file and a callback that conforms to MidiLexerCallback 
+// Pass this a ReadSeeker to a MIDI file and a callback that conforms to MidiLexerCallback
 // and it'll run over the file, calling events on the callback.
 type MidiLexer struct {
 	callback MidiLexerCallback
@@ -92,7 +91,7 @@ func (lexer *MidiLexer) next() (finished bool, err error) {
 	err = nil
 	finished = false
 
-	// The position in the file before the next lexing event happens. 
+	// The position in the file before the next lexing event happens.
 	// Useful in some cases
 	var currentPosition int64
 	currentPosition, err = lexer.input.Seek(0, 1)
@@ -100,8 +99,6 @@ func (lexer *MidiLexer) next() (finished bool, err error) {
 	if err != nil {
 		return
 	}
-
-	//fmt.Println("*** Next. State:", lexer.state, "position:", currentPosition)
 
 	// See comments for state values above.
 	switch lexer.state {
@@ -466,7 +463,7 @@ func (lexer *MidiLexer) next() (finished bool, err error) {
 									return
 								}
 
-							// Cue point text	
+							// Cue point text
 							case 0x07:
 								{
 									var text string
@@ -640,8 +637,10 @@ func (lexer *MidiLexer) next() (finished bool, err error) {
 							case 0x59:
 								{
 									// TODO TEST
-									//fmt.Println("Key Signature event TOOD")
 									var length uint32
+									var sharpsOrFlats int8
+									var mode uint8
+
 									length, err = parseVarLength(lexer.input)
 
 									if err != nil {
@@ -653,20 +652,23 @@ func (lexer *MidiLexer) next() (finished bool, err error) {
 										return
 									}
 
-									// TODO sharps is signed int
-									// TODO callback etc.
-									_, err = parseUint8(lexer.input) // sharps
+									// Signed int, positive is sharps, negative is flats.
+									sharpsOrFlats, err = parseInt8(lexer.input)
 
 									if err != nil {
 										return
 									}
 
-									_, err = parseUint8(lexer.input) // flats
+									// Mode is Major or Minor.
+									mode, err = parseUint8(lexer.input)
 
 									if err != nil {
 										return
 									}
 
+									key, resultMode := keySignatureFromSharpsOrFlats(sharpsOrFlats, mode)
+
+									lexer.callback.KeySignature(key, resultMode, sharpsOrFlats)
 								}
 
 							// Sequencer specific info
@@ -708,7 +710,7 @@ func (lexer *MidiLexer) next() (finished bool, err error) {
 						//fmt.Println("Unrecognised message type", mType)
 					}
 
-					// 	
+					//
 				}
 
 				// This covers all cases.
