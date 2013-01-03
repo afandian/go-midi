@@ -18,7 +18,6 @@ package midi
 // Taking a signed number of sharps or flats (positive for sharps, negative for flats) and a mode (0 for major, 1 for minor)
 // decide the key signature.
 func keySignatureFromSharpsOrFlats(sharpsOrFlats int8, mode uint8) (key ScaleDegree, resultMode KeySignatureMode) {
-
 	// 0 is C.
 	var tmp int = int(DegreeC + sharpsOrFlats*7)
 
